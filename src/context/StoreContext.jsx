@@ -1,6 +1,14 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { INITIAL_PRODUCTS, INITIAL_ORDERS, TELUGU_TRANSLATIONS } from '../data/mockData';
 import { ADMIN_PHONE, ADMIN_NAME, PAYMENT_CONFIG } from '../data/paymentConfig';
+import {
+  fetchProductsFromSupabase,
+  saveOrderToSupabase,
+  updateOrderStatusInSupabase,
+  updateOrderPaymentInSupabase,
+  subscribeToOrders
+} from '../lib/supabaseSync';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
 
 const StoreContext = createContext();
 
@@ -473,6 +481,9 @@ export const StoreProvider = ({ children }) => {
     clearCart();
     removeCoupon();
     setActiveView('tracking');
+
+    // Sync to Supabase cloud if configured
+    saveOrderToSupabase(newOrder);
   };
 
   const updateOrderStatus = (orderId, newStatus) => {
@@ -485,6 +496,9 @@ export const StoreProvider = ({ children }) => {
       }
       return updated;
     });
+
+    // Sync status change to Supabase
+    updateOrderStatusInSupabase(orderId, newStatus);
   };
 
   const updateOrderPaymentStatus = (orderId, newStatus, newUtr = '') => {
@@ -507,13 +521,81 @@ export const StoreProvider = ({ children }) => {
       }
       return updated;
     });
+
+    // Sync payment status to Supabase
+    updateOrderPaymentInSupabase(orderId, newStatus, newUtr);
   };
+
+  // Supabase Initial Products Fetch & Realtime Subscription
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    fetchProductsFromSupabase().then((remoteProducts) => {
+      if (remoteProducts && remoteProducts.length > 0) {
+        setProducts(remoteProducts);
+        try {
+          localStorage.setItem('nissi_products_v1', JSON.stringify(remoteProducts));
+        } catch (e) {
+          console.warn('Could not cache remote products:', e);
+        }
+      }
+    });
+
+    const unsubscribe = subscribeToOrders((payload) => {
+      if (payload?.new) {
+        const updatedRow = payload.new;
+        setOrders((prev) => {
+          const exists = prev.some((o) => o.id === updatedRow.id);
+          if (exists) {
+            return prev.map((o) =>
+              o.id === updatedRow.id
+                ? {
+                    ...o,
+                    status: updatedRow.status || o.status,
+                    paymentStatus: updatedRow.payment_status || o.paymentStatus,
+                    utr: updatedRow.utr || o.utr
+                  }
+                : o
+            );
+          } else {
+            const mappedNewOrder = {
+              id: updatedRow.id,
+              customerName: updatedRow.customer_name,
+              phone: updatedRow.phone,
+              address: updatedRow.address,
+              items: updatedRow.items || [],
+              subtotal: Number(updatedRow.subtotal || 0),
+              discountAmount: Number(updatedRow.discount_amount || 0),
+              appliedCoupon: updatedRow.applied_coupon,
+              deliveryFee: Number(updatedRow.delivery_fee || 0),
+              totalAmount: Number(updatedRow.total_amount || 0),
+              deliveryType: updatedRow.delivery_type,
+              status: updatedRow.status || 'Placed',
+              deliveryWindow: updatedRow.delivery_window || 'Within 15 Mins',
+              isEmergency: Boolean(updatedRow.is_emergency),
+              paymentMethod: updatedRow.payment_method || 'COD',
+              paymentStatus: updatedRow.payment_status || 'Unpaid',
+              upiId: updatedRow.upi_id || 'abicharan07@axl',
+              utr: updatedRow.utr || '',
+              assignedRider: updatedRow.assigned_rider || 'Raju M. (+91 91234 56789)'
+            };
+            return [mappedNewOrder, ...prev];
+          }
+        });
+      }
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
 
   const activeOrder = orders.find((o) => o.id === activeOrderId) || orders[0];
 
   return (
     <StoreContext.Provider
       value={{
+        isSupabaseConfigured,
         language,
         setLanguage,
         t,
