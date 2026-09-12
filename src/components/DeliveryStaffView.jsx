@@ -388,7 +388,7 @@ export default function DeliveryStaffView() {
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&data=${encodeURIComponent(
                   PAYMENT_CONFIG?.generateUpiUri
                     ? PAYMENT_CONFIG.generateUpiUri(riderQrOrder.totalAmount, riderQrOrder.id)
-                    : `upi://pay?pa=${PAYMENT_CONFIG?.upiId || '9966712681@axl'}&pn=Nissi%20Super%20Stores&am=${riderQrOrder.totalAmount}&cu=INR&tn=Order%20${riderQrOrder.id}`
+                    : `upi://pay?pa=abicharan07@axl&pn=Nissi%20Super%20Stores&am=${riderQrOrder.totalAmount}&cu=INR&tn=Order%20${riderQrOrder.id}`
                 )}`}
                 alt="Doorstep QR Code"
                 className="w-64 h-64 object-contain rounded-xl shadow-xs"
@@ -397,24 +397,18 @@ export default function DeliveryStaffView() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-3 py-2 font-mono text-xs font-bold text-forest bg-forest/5 rounded-xl border border-forest/20">
-                <div className="flex items-center gap-1.5 truncate">
-                  <Phone className="w-3.5 h-3.5 text-forest shrink-0" />
-                  <span>{PAYMENT_CONFIG?.upiPhoneFormatted || '+91 9966712681'}</span>
-                </div>
+                <span className="truncate">{PAYMENT_CONFIG?.upiId || 'abicharan07@axl'}</span>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(PAYMENT_CONFIG?.upiPhone || '9966712681');
+                    navigator.clipboard.writeText(PAYMENT_CONFIG?.upiId || 'abicharan07@axl');
                     setCopiedUpi(true);
                     setTimeout(() => setCopiedUpi(false), 2000);
                   }}
                   className="px-2.5 py-1 bg-white rounded-lg border border-hairline text-[10px] font-sans font-bold text-ink hover:text-forest transition-colors shrink-0 ml-2"
                 >
-                  {copiedUpi ? 'Copied!' : 'Copy Mobile'}
+                  {copiedUpi ? 'Copied!' : 'Copy'}
                 </button>
-              </div>
-              <div className="text-[10px] text-center text-ink-soft font-mono">
-                UPI ID: {PAYMENT_CONFIG?.upiId || '9966712681@axl'}
               </div>
 
               <button

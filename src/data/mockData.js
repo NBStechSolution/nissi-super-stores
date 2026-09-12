@@ -342,7 +342,7 @@ export const INITIAL_ORDERS = [
     deliveryWindow: 'Within 15 Mins',
     isEmergency: true,
     assignedRider: 'Raju M. (+91 91234 56789)',
-    paymentMethod: 'UPI Online (9966712681@axl • Ref: TXN-89421)'
+    paymentMethod: 'UPI Online (abicharan07@axl • Ref: TXN-89421)'
   },
   {
     id: 'ORD-9841',
