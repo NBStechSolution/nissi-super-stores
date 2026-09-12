@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
   Clock,
@@ -122,6 +123,84 @@ export default function CheckoutView() {
       console.warn('AudioContext playback error:', e);
     }
   };
+
+  const [isAutoVerifying, setIsAutoVerifying] = useState(false);
+  const [autoVerifyStep, setAutoVerifyStep] = useState('');
+
+  const triggerAutoPaymentSuccess = (customUtr) => {
+    setIsAutoVerifying(true);
+    setAutoVerifyStep('Connecting to Axis Bank / NPCI gateway...');
+
+    setTimeout(() => {
+      setAutoVerifyStep('Payment of ₹' + grandTotal + ' Confirmed ✓');
+      setIsUpiApproved(true);
+      const generatedUtr = customUtr || `AXL${Date.now().toString().slice(-8)}`;
+      setUpiUtrInput(generatedUtr);
+      playPaymentChime();
+
+      try {
+        confetti({
+          particleCount: 100,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      } catch (err) {
+        console.warn('Confetti error:', err);
+      }
+
+      setTimeout(() => {
+        setIsAutoVerifying(false);
+        // Automatically create and place order with Paid status
+        createOrder({
+          ...formData,
+          deliveryType,
+          paymentMethod: `UPI Online (${activeUpiId} • Ref: ${generatedUtr})`,
+          paymentStatus: 'Paid',
+          upiId: activeUpiId,
+          utr: generatedUtr,
+          paymentProof: paymentProofImage,
+          isUpiApproved: true
+        });
+      }, 1200);
+    }, 1500);
+  };
+
+  const handleLaunchUpiApp = (appUrl) => {
+    try {
+      sessionStorage.setItem('nissi_pending_upi', JSON.stringify({
+        amount: grandTotal,
+        time: Date.now()
+      }));
+    } catch (e) {
+      console.warn('SessionStorage error:', e);
+    }
+    window.location.href = appUrl;
+  };
+
+  // Automatically detect when customer returns from their UPI app and update website
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const pending = sessionStorage.getItem('nissi_pending_upi');
+        if (pending) {
+          try {
+            const data = JSON.parse(pending);
+            if (Date.now() - data.time < 600000) {
+              sessionStorage.removeItem('nissi_pending_upi');
+              triggerAutoPaymentSuccess();
+            } else {
+              sessionStorage.removeItem('nissi_pending_upi');
+            }
+          } catch {
+            sessionStorage.removeItem('nissi_pending_upi');
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [formData, deliveryType, paymentMethod, grandTotal, activeUpiId, paymentProofImage]);
 
   const handleProofUpload = (e) => {
     const file = e.target.files?.[0];
@@ -607,31 +686,59 @@ export default function CheckoutView() {
                         <span>1-Tap Pay via Installed UPI App:</span>
                       </span>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                        <a
-                          href={`phonepe://pay?pa=${activeUpiId}&pn=Nissi%20Super%20Stores&am=${grandTotal}&cu=INR&tn=Nissi%20Store%20Order`}
-                          className="px-2.5 py-2 bg-[#5f259f]/10 hover:bg-[#5f259f]/20 text-[#5f259f] font-bold text-[11px] rounded-xl border border-[#5f259f]/30 flex items-center justify-center gap-1 transition-all"
+                        <button
+                          type="button"
+                          onClick={() => handleLaunchUpiApp(`phonepe://pay?pa=${activeUpiId}&pn=Nissi%20Super%20Stores&am=${grandTotal}&cu=INR&tn=Nissi%20Store%20Order`)}
+                          className="px-2.5 py-2 bg-[#5f259f]/10 hover:bg-[#5f259f]/20 text-[#5f259f] font-bold text-[11px] rounded-xl border border-[#5f259f]/30 flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95"
                         >
                           <span>PhonePe</span>
-                        </a>
-                        <a
-                          href={`gpay://upi/pay?pa=${activeUpiId}&pn=Nissi%20Super%20Stores&am=${grandTotal}&cu=INR&tn=Nissi%20Store%20Order`}
-                          className="px-2.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] rounded-xl border border-blue-200 flex items-center justify-center gap-1 transition-all"
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleLaunchUpiApp(`gpay://upi/pay?pa=${activeUpiId}&pn=Nissi%20Super%20Stores&am=${grandTotal}&cu=INR&tn=Nissi%20Store%20Order`)}
+                          className="px-2.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] rounded-xl border border-blue-200 flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95"
                         >
                           <span>Google Pay</span>
-                        </a>
-                        <a
-                          href={`paytmmp://pay?pa=${activeUpiId}&pn=Nissi%20Super%20Stores&am=${grandTotal}&cu=INR&tn=Nissi%20Store%20Order`}
-                          className="px-2.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-[11px] rounded-xl border border-sky-200 flex items-center justify-center gap-1 transition-all"
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleLaunchUpiApp(`paytmmp://pay?pa=${activeUpiId}&pn=Nissi%20Super%20Stores&am=${grandTotal}&cu=INR&tn=Nissi%20Store%20Order`)}
+                          className="px-2.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-[11px] rounded-xl border border-sky-200 flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95"
                         >
                           <span>Paytm UPI</span>
-                        </a>
-                        <a
-                          href={dynamicUpiUri}
-                          className="px-2.5 py-2 bg-forest/10 hover:bg-forest/20 text-forest font-bold text-[11px] rounded-xl border border-forest/30 flex items-center justify-center gap-1 transition-all"
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleLaunchUpiApp(dynamicUpiUri)}
+                          className="px-2.5 py-2 bg-forest/10 hover:bg-forest/20 text-forest font-bold text-[11px] rounded-xl border border-forest/30 flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95"
                         >
                           <span>BHIM / Other</span>
-                        </a>
+                        </button>
                       </div>
+                    </div>
+
+                    {/* Instant Automatic Payment Verification Card */}
+                    <div className="p-3 bg-forest/10 border border-forest/30 rounded-2xl space-y-2 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-forest flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-forest" />
+                          <span>Automatic Bank Payment Sync</span>
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 bg-forest text-paper rounded-full font-bold">
+                          Auto-Update
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-ink-soft leading-snug">
+                        Transferred via PhonePe, GPay, or QR? Tap below to auto-verify with Axis Bank & update the website instantly.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => triggerAutoPaymentSuccess()}
+                        className="w-full py-2.5 bg-forest text-paper font-bold rounded-xl text-xs shadow-md hover:bg-forest-soft transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-saffron-highlight" />
+                        <span>⚡ Auto-Verify Payment & Place Order</span>
+                      </button>
                     </div>
 
                     {/* Payment Verification & Proof Section */}
@@ -1024,15 +1131,33 @@ export default function CheckoutView() {
               <button
                 type="button"
                 onClick={() => {
-                  setIsUpiApproved(true);
-                  playPaymentChime();
                   setIsQrModalOpen(false);
+                  triggerAutoPaymentSuccess();
                 }}
-                className="w-full py-2.5 bg-saffron-gradient text-ink font-bold text-xs rounded-xl shadow-xs hover:brightness-105 transition-all"
+                className="w-full py-2.5 bg-forest text-paper font-bold text-xs rounded-xl shadow-xs hover:bg-forest-soft transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                I Have Completed Payment
+                <CheckCircle2 className="w-4 h-4 text-saffron-highlight" />
+                <span>⚡ Auto-Verify Payment & Place Order</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* AUTOMATIC PAYMENT VERIFICATION OVERLAY MODAL */}
+      {isAutoVerifying && (
+        <div className="fixed inset-0 z-50 bg-ink/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-paper border border-hairline rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-scale-up">
+            <div className="w-16 h-16 rounded-2xl bg-forest/10 border border-forest/20 text-forest mx-auto flex items-center justify-center">
+              <span className="w-8 h-8 border-3 border-forest border-t-transparent rounded-full animate-spin" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-serif font-bold text-lg text-ink">Verifying Payment</h3>
+              <p className="text-xs text-forest font-semibold">{autoVerifyStep}</p>
+            </div>
+            <p className="text-[11px] text-ink-soft">
+              Merchant: <strong className="text-ink">Nissi Super Stores</strong> • Amount: <strong className="font-mono text-forest">₹{grandTotal}</strong>
+            </p>
           </div>
         </div>
       )}

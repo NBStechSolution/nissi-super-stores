@@ -78,7 +78,18 @@ export const StoreProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const [orders, setOrders] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nissi_orders_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn('Could not parse saved orders from localStorage:', e);
+    }
+    return INITIAL_ORDERS;
+  });
   const [activeOrderId, setActiveOrderId] = useState('ORD-9842');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
@@ -449,7 +460,15 @@ export const StoreProvider = ({ children }) => {
       return updated;
     });
 
-    setOrders((prev) => [newOrder, ...prev]);
+    setOrders((prev) => {
+      const updated = [newOrder, ...prev];
+      try {
+        localStorage.setItem('nissi_orders_v1', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Failed to save orders to localStorage:', e);
+      }
+      return updated;
+    });
     setActiveOrderId(newOrder.id);
     clearCart();
     removeCoupon();
@@ -457,14 +476,20 @@ export const StoreProvider = ({ children }) => {
   };
 
   const updateOrderStatus = (orderId, newStatus) => {
-    setOrders((prev) =>
-      prev.map((ord) => (ord.id === orderId ? { ...ord, status: newStatus } : ord))
-    );
+    setOrders((prev) => {
+      const updated = prev.map((ord) => (ord.id === orderId ? { ...ord, status: newStatus } : ord));
+      try {
+        localStorage.setItem('nissi_orders_v1', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Failed to update orders in localStorage:', e);
+      }
+      return updated;
+    });
   };
 
   const updateOrderPaymentStatus = (orderId, newStatus, newUtr = '') => {
-    setOrders((prev) =>
-      prev.map((ord) => {
+    setOrders((prev) => {
+      const updated = prev.map((ord) => {
         if (ord.id === orderId) {
           return {
             ...ord,
@@ -474,8 +499,14 @@ export const StoreProvider = ({ children }) => {
           };
         }
         return ord;
-      })
-    );
+      });
+      try {
+        localStorage.setItem('nissi_orders_v1', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Failed to save payment status to localStorage:', e);
+      }
+      return updated;
+    });
   };
 
   const activeOrder = orders.find((o) => o.id === activeOrderId) || orders[0];
