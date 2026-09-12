@@ -594,12 +594,11 @@ export default function AdminDashboard() {
                         if (orderStatusFilter !== 'all' && ord.status !== orderStatusFilter) return false;
                         if (!orderSearch.trim()) return true;
                         const q = orderSearch.toLowerCase();
-                        return (
-                          ord.id.toLowerCase().includes(q) ||
-                          ord.customerName.toLowerCase().includes(q) ||
-                          ord.phone.includes(q) ||
-                          (ord.deliveryAddress && ord.deliveryAddress.toLowerCase().includes(q))
-                        );
+                        const idMatch = (ord.id || '').toLowerCase().includes(q);
+                        const nameMatch = (ord.customerName || '').toLowerCase().includes(q);
+                        const phoneMatch = String(ord.phone || '').includes(q);
+                        const addrMatch = (ord.address || ord.deliveryAddress || '').toLowerCase().includes(q);
+                        return idMatch || nameMatch || phoneMatch || addrMatch;
                       })
                       .map((ord) => (
                       <tr
@@ -614,8 +613,8 @@ export default function AdminDashboard() {
                           #{ord.id}
                         </td>
                         <td className="p-3">
-                          <span className="font-semibold block text-ink">{ord.customerName}</span>
-                          <span className="text-[10px] text-ink-soft/70 font-mono">{ord.phone}</span>
+                          <span className="font-semibold block text-ink">{ord.customerName || 'Customer'}</span>
+                          <span className="text-[10px] text-ink-soft/70 font-mono">{ord.phone || ''}</span>
                         </td>
                         <td className="p-3">
                           {ord.isEmergency ? (
@@ -629,7 +628,7 @@ export default function AdminDashboard() {
                           )}
                         </td>
                         <td className="p-3 text-ink-soft">
-                          {ord.items.map((i) => i.name).join(', ')}
+                          {(ord.items || []).map((i) => i.name || 'Item').join(', ')}
                         </td>
                         <td className="p-3 font-mono font-bold text-forest">
                           ₹{ord.totalAmount}
@@ -793,14 +792,14 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {products
                   .filter((p) => {
+                    if (!p) return false;
                     if (inventoryCategory !== 'all' && p.category !== inventoryCategory) return false;
                     if (!inventorySearch.trim()) return true;
                     const q = inventorySearch.toLowerCase();
-                    return (
-                      p.name.toLowerCase().includes(q) ||
-                      p.category.toLowerCase().includes(q) ||
-                      (p.nameTe && p.nameTe.toLowerCase().includes(q))
-                    );
+                    const nameStr = (p.name || '').toLowerCase();
+                    const catStr = (p.category || '').toLowerCase();
+                    const nameTeStr = (p.nameTe || '').toLowerCase();
+                    return nameStr.includes(q) || catStr.includes(q) || nameTeStr.includes(q);
                   })
                   .map((p) => {
                     let barColor = 'bg-forest';
@@ -1675,10 +1674,10 @@ export default function AdminDashboard() {
                 <span>ITEM</span>
                 <span>QTY x RATE = AMT</span>
               </div>
-              {printOrder.items.map((it, idx) => (
+              {(printOrder.items || []).map((it, idx) => (
                 <div key={idx} className="flex justify-between">
-                  <span className="truncate max-w-[200px]">{it.name}</span>
-                  <span>{it.quantity} x ₹{it.price} = ₹{it.quantity * it.price}</span>
+                  <span className="truncate max-w-[200px]">{it.name || 'Item'}</span>
+                  <span>{it.quantity || 1} x ₹{it.price || 0} = ₹{(it.quantity || 1) * (it.price || 0)}</span>
                 </div>
               ))}
             </div>

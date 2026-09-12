@@ -69,7 +69,7 @@ export default function ProductModal() {
         <div>
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className="text-[11px] font-semibold text-forest bg-forest/10 px-2.5 py-0.5 rounded-full border border-forest/20">
-              {selectedProduct.category.toUpperCase()}
+              {(selectedProduct.category || 'General').toUpperCase()}
             </span>
             <span className="text-[11px] font-semibold text-ink-soft bg-cardcream px-2.5 py-0.5 rounded-full border border-hairline">
               {selectedProduct.unit}

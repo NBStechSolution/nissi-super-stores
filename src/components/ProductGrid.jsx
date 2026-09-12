@@ -75,12 +75,16 @@ export default function ProductGrid() {
   };
 
   const filteredProducts = products.filter((prod) => {
+    if (!prod) return false;
     const matchesCategory =
       selectedCategory === 'all' || prod.category === selectedCategory;
-    const matchesSearch =
-      prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (prod.nameTe && prod.nameTe.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      prod.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = (searchQuery || '').trim().toLowerCase();
+    if (!q) return matchesCategory;
+
+    const nameStr = (prod.name || '').toLowerCase();
+    const nameTeStr = (prod.nameTe || '').toLowerCase();
+    const descStr = (prod.description || '').toLowerCase();
+    const matchesSearch = nameStr.includes(q) || nameTeStr.includes(q) || descStr.includes(q);
     return matchesCategory && matchesSearch;
   });
 

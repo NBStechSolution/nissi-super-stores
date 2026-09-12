@@ -36,6 +36,7 @@ export default function OrderTrackingView() {
     setActiveOrderId,
     addToCart,
     setIsCartOpen,
+    setActiveView,
     PAYMENT_CONFIG
   } = useStore();
   const [isPrintOpen, setIsPrintOpen] = useState(false);
@@ -129,6 +130,26 @@ export default function OrderTrackingView() {
     setIsCartOpen(true);
   };
 
+  if (!activeOrder) {
+    return (
+      <div className="max-w-md mx-auto my-12 p-8 bg-cardcream border border-hairline rounded-crate text-center space-y-4 shadow-xs">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-forest/10 flex items-center justify-center text-3xl">
+          📦
+        </div>
+        <h2 className="font-serif font-bold text-xl text-ink">No Active Orders</h2>
+        <p className="text-xs text-ink-soft leading-relaxed">
+          You don't have any active kirana orders right now. Explore our store catalogue to order daily fresh items.
+        </p>
+        <button
+          onClick={() => setActiveView('home')}
+          className="px-5 py-2.5 bg-forest text-paper font-bold text-xs rounded-xl shadow-xs hover:bg-forest-soft transition-all cursor-pointer"
+        >
+          Browse Catalogue
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto py-6 px-4 space-y-6">
 
@@ -173,7 +194,7 @@ export default function OrderTrackingView() {
           </button>
 
           <a
-            href={`https://wa.me/919989069151?text=${encodeURIComponent(`Hi Nissi Super Stores! I am tracking my order #${activeOrder.id} for ${activeOrder.customerName}.`)}`}
+            href={`https://wa.me/919989069151?text=${encodeURIComponent(`Hi Nissi Super Stores! I am tracking my order #${activeOrder.id} for ${activeOrder.customerName || 'Customer'}.`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-3 py-1.5 bg-forest/10 hover:bg-forest/20 text-forest font-bold rounded-xl text-xs border border-forest/30 transition-colors flex items-center gap-1.5"
@@ -307,20 +328,20 @@ export default function OrderTrackingView() {
               <span>Delivery Details</span>
             </h3>
             <div className="p-3.5 bg-paper rounded-xl border border-hairline space-y-1.5">
-              <p className="font-bold text-ink">{activeOrder.customerName}</p>
-              <p className="text-ink-soft">{activeOrder.address}</p>
-              <p className="text-ink-soft/70 font-mono">{activeOrder.phone}</p>
+              <p className="font-bold text-ink">{activeOrder.customerName || 'Customer'}</p>
+              <p className="text-ink-soft">{activeOrder.address || ''}</p>
+              <p className="text-ink-soft/70 font-mono">{activeOrder.phone || ''}</p>
             </div>
           </div>
 
           {/* Order Items Summary */}
           <div className="space-y-3 text-xs">
             <h3 className="font-serif font-semibold text-sm text-ink flex items-center justify-between">
-              <span>Items in this Order ({activeOrder.items.length})</span>
+              <span>Items in this Order ({(activeOrder.items || []).length})</span>
               <span className="font-mono font-bold text-forest">₹{activeOrder.totalAmount}</span>
             </h3>
             <div className="p-3.5 bg-paper rounded-xl border border-hairline space-y-2">
-              {activeOrder.items.map((item) => (
+              {(activeOrder.items || []).map((item) => (
                 <div key={item.id} className="flex justify-between items-center text-ink-soft">
                   <span>{item.quantity}x {item.name}</span>
                   <span className="font-mono font-semibold text-ink">₹{item.price * item.quantity}</span>
@@ -491,10 +512,10 @@ export default function OrderTrackingView() {
             </div>
 
             <div className="text-[11px] space-y-0.5 pb-2 border-b border-dashed border-gray-400">
-              <p><strong>Customer:</strong> {activeOrder.customerName}</p>
-              <p><strong>Phone:</strong> {activeOrder.phone}</p>
-              <p><strong>Address:</strong> {activeOrder.address}</p>
-              <p><strong>Placed:</strong> {activeOrder.placedAt}</p>
+              <p><strong>Customer:</strong> {activeOrder.customerName || 'Customer'}</p>
+              <p><strong>Phone:</strong> {activeOrder.phone || ''}</p>
+              <p><strong>Address:</strong> {activeOrder.address || ''}</p>
+              <p><strong>Placed:</strong> {activeOrder.placedAt || 'Today'}</p>
               <p className="text-forest font-bold"><strong>HANDOVER:</strong> Direct Doorstep Delivery</p>
             </div>
 
@@ -503,7 +524,7 @@ export default function OrderTrackingView() {
                 <span>ITEM</span>
                 <span>AMT</span>
               </div>
-              {activeOrder.items.map((it, idx) => (
+              {(activeOrder.items || []).map((it, idx) => (
                 <div key={idx} className="flex justify-between">
                   <span className="truncate max-w-[220px]">{it.quantity}x {it.name}</span>
                   <span>₹{it.quantity * it.price}</span>

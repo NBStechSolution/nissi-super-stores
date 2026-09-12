@@ -65,16 +65,6 @@ export default function CheckoutView() {
   const [paymentFailed, setPaymentFailed] = useState(false);
   const [paymentErrorMessage, setPaymentErrorMessage] = useState('');
 
-  const [lastUserKey, setLastUserKey] = useState({ name: userName, phone: userPhone });
-  if (isLoggedIn && (lastUserKey.name !== userName || lastUserKey.phone !== userPhone)) {
-    setLastUserKey({ name: userName, phone: userPhone });
-    setFormData((prev) => ({
-      ...prev,
-      name: userName || prev.name,
-      phone: userPhone ? (userPhone.startsWith('+91') ? userPhone : `+91 ${userPhone}`) : prev.phone
-    }));
-  }
-
   const [deliveryType, setDeliveryType] = useState('Normal');
   const [paymentMethod, setPaymentMethod] = useState('Online'); // Default to modern Instant Online UPI
   const [tooltipMessage, setTooltipMessage] = useState(null);

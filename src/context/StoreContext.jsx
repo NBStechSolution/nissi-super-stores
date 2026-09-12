@@ -28,6 +28,7 @@ export const StoreProvider = ({ children }) => {
 
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(session));
   const [userPhone, setUserPhone] = useState(session?.phone || '');
+  const [userName, setUserName] = useState(session?.name || '');
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loginPromptMessage, setLoginPromptMessage] = useState('');
   const [pendingCartAction, setPendingCartAction] = useState(null);
@@ -595,6 +596,11 @@ export const StoreProvider = ({ children }) => {
     });
 
     const unsubscribe = subscribeToOrders((payload) => {
+      if (payload?.eventType === 'DELETE' && payload?.old?.id) {
+        setOrders((prev) => prev.filter((o) => o.id !== payload.old.id));
+        return;
+      }
+
       if (payload?.new) {
         const updatedRow = payload.new;
         setOrders((prev) => {
@@ -606,7 +612,8 @@ export const StoreProvider = ({ children }) => {
                     ...o,
                     status: updatedRow.status || o.status,
                     paymentStatus: updatedRow.payment_status || o.paymentStatus,
-                    utr: updatedRow.utr || o.utr
+                    utr: updatedRow.utr || o.utr,
+                    assignedRider: updatedRow.assigned_rider || o.assignedRider
                   }
                 : o
             );

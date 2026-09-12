@@ -149,22 +149,22 @@ export default function DeliveryStaffView() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-paper p-3.5 rounded-2xl border border-hairline">
                   <div className="space-y-1">
                     <span className="text-[10px] text-ink-soft font-bold block">CUSTOMER ADDRESS</span>
-                    <p className="font-bold text-ink">{ord.customerName}</p>
+                    <p className="font-bold text-ink">{ord.customerName || 'Customer'}</p>
                     <p className="text-ink-soft flex items-start gap-1">
                       <MapPin className="w-3.5 h-3.5 text-forest shrink-0 mt-0.5" />
-                      <span>{ord.address}</span>
+                      <span>{ord.address || ''}</span>
                     </p>
                   </div>
 
                   <div className="flex sm:justify-end items-center gap-2 flex-wrap">
                     <a
-                      href={`tel:${ord.phone}`}
+                      href={`tel:${(ord.phone || '').replace(/\s+/g, '')}`}
                       className="px-3 py-2 bg-cardcream hover:bg-hairline/60 rounded-xl font-semibold flex items-center gap-1.5 text-ink transition-colors"
                     >
                       <Phone className="w-3.5 h-3.5 text-forest" /> Call
                     </a>
                     <a
-                      href={`https://wa.me/91${ord.phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(`Hello ${ord.customerName}! I am your delivery rider from Nissi Super Stores with your order #${ord.id}.`)}`}
+                      href={`https://wa.me/91${(ord.phone || '').replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(`Hello ${ord.customerName || 'Customer'}! I am your delivery rider from Nissi Super Stores with your order #${ord.id}.`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-2 bg-forest/10 hover:bg-forest/20 text-forest font-bold rounded-xl flex items-center gap-1.5 transition-colors border border-forest/30"
@@ -172,7 +172,7 @@ export default function DeliveryStaffView() {
                       <MessageSquare className="w-3.5 h-3.5" /> WhatsApp
                     </a>
                     <a
-                      href={`https://maps.google.com/?q=${encodeURIComponent(ord.address)}`}
+                      href={`https://maps.google.com/?q=${encodeURIComponent(ord.address || '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-2 bg-forest text-paper font-semibold rounded-xl flex items-center gap-1.5 hover:bg-forest-soft transition-colors"
@@ -186,7 +186,7 @@ export default function DeliveryStaffView() {
                 <div className="text-xs space-y-1">
                   <span className="text-ink-soft font-bold">ITEMS TO DELIVER:</span>
                   <p className="text-ink font-medium">
-                    {ord.items.map((i) => `${i.quantity}x ${i.name}`).join(' • ')}
+                    {(ord.items || []).map((i) => `${i.quantity || 1}x ${i.name || 'Item'}`).join(' • ')}
                   </p>
                 </div>
 
@@ -288,7 +288,7 @@ export default function DeliveryStaffView() {
             <div key={ord.id} className="p-4 bg-cardcream border border-hairline rounded-2xl flex items-center justify-between text-xs">
               <div>
                 <span className="font-mono font-bold text-ink">#{ord.id}</span>
-                <p className="text-ink-soft">{ord.customerName} • {ord.placedAt}</p>
+                <p className="text-ink-soft">{ord.customerName || 'Customer'} • {ord.placedAt || 'Today'}</p>
               </div>
               <div className="text-right">
                 <span className="font-mono font-bold text-forest text-sm">₹{ord.totalAmount}</span>
@@ -315,10 +315,10 @@ export default function DeliveryStaffView() {
             </div>
 
             <div className="text-[11px] space-y-0.5 pb-2 border-b border-dashed border-gray-400">
-              <p><strong>Customer:</strong> {printSlipOrder.customerName}</p>
-              <p><strong>Phone:</strong> {printSlipOrder.phone}</p>
-              <p><strong>Address:</strong> {printSlipOrder.address}</p>
-              <p><strong>Rider Assigned:</strong> {printSlipOrder.assignedRider}</p>
+              <p><strong>Customer:</strong> {printSlipOrder.customerName || 'Customer'}</p>
+              <p><strong>Phone:</strong> {printSlipOrder.phone || ''}</p>
+              <p><strong>Address:</strong> {printSlipOrder.address || ''}</p>
+              <p><strong>Rider Assigned:</strong> {printSlipOrder.assignedRider || 'Rider #1'}</p>
             </div>
 
             <div className="space-y-1 py-1 border-b border-dashed border-gray-400 text-[11px]">
@@ -326,10 +326,10 @@ export default function DeliveryStaffView() {
                 <span>ITEM</span>
                 <span>QTY</span>
               </div>
-              {printSlipOrder.items.map((it, idx) => (
+              {(printSlipOrder.items || []).map((it, idx) => (
                 <div key={idx} className="flex justify-between">
-                  <span className="truncate max-w-[220px]">[ ] {it.name}</span>
-                  <span>{it.quantity}</span>
+                  <span className="truncate max-w-[220px]">[ ] {it.name || 'Item'}</span>
+                  <span>{it.quantity || 1}</span>
                 </div>
               ))}
             </div>

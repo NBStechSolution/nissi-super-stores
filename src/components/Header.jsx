@@ -105,7 +105,7 @@ export default function Header() {
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-cardcream hover:bg-paper text-ink font-semibold rounded-xl border border-hairline text-xs transition-colors"
           >
             <User className="w-3.5 h-3.5 text-forest" />
-            <span>{isLoggedIn ? userName : t('login', 'Login')}</span>
+            <span>{isLoggedIn ? (userName || 'Account') : t('login', 'Login')}</span>
           </button>
 
           {/* Desktop View Toggle Buttons */}

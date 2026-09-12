@@ -70,7 +70,7 @@ export default function Hero2D() {
             <span>Electricity</span>
           </button>
           <button
-            onClick={() => openUtilityModal('dth_mobile')}
+            onClick={() => openUtilityModal('mobile')}
             className="flex-1 py-1.5 px-2 bg-cardcream hover:bg-paper text-ink font-semibold rounded-lg border border-hairline text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-98"
           >
             <Sparkles className="w-3.5 h-3.5 text-forest" />
@@ -240,7 +240,7 @@ export default function Hero2D() {
               <span>Pay Electricity Bill</span>
             </button>
             <button
-              onClick={() => openUtilityModal('dth_mobile')}
+              onClick={() => openUtilityModal('mobile')}
               className="px-3.5 py-1.5 bg-cardcream hover:bg-paper text-ink font-semibold rounded-xl border border-hairline transition-all flex items-center gap-1.5 shadow-xs"
             >
               <Sparkles className="w-3.5 h-3.5 text-forest" />

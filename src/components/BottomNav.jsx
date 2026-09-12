@@ -35,7 +35,7 @@ export default function BottomNav() {
 
   const isHome = activeView === 'home';
   const isTracking = activeView === 'tracking';
-  const hasActiveOrder = orders && orders.some((o) => o.status !== 'Delivered');
+  const hasActiveOrder = Boolean(orders && orders.some((o) => o && o.status !== 'Delivered' && o.status !== 'Cancelled'));
 
   return (
     <>

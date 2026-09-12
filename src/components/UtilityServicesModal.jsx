@@ -4,7 +4,8 @@ import { useStore } from '../context/StoreContext';
 
 export default function UtilityServicesModal() {
   const { isUtilityModalOpen, setIsUtilityModalOpen, utilityType } = useStore();
-  const [tab, setTab] = useState(utilityType || 'electricity'); // 'electricity' | 'dth' | 'mobile'
+  const normalizeTab = (t) => (t === 'dth_mobile' ? 'mobile' : (t === 'dth' || t === 'mobile' || t === 'electricity' ? t : 'electricity'));
+  const [tab, setTab] = useState(() => normalizeTab(utilityType));
   const [consumerNo, setConsumerNo] = useState('');
   const [biller, setBiller] = useState('TSSPDCL - Telangana Southern Power');
   const [amount, setAmount] = useState('840');

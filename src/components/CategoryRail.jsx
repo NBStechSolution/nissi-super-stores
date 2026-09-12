@@ -35,7 +35,7 @@ export default function CategoryRail() {
           const count =
             cat.id === 'all'
               ? products.length
-              : products.filter((p) => p.category === cat.id).length;
+              : products.filter((p) => p && p.category === cat.id).length;
 
           const catTitle =
             language === 'te' && TELUGU_CAT_NAMES[cat.id]

@@ -18,7 +18,18 @@ const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const DeliveryStaffView = lazy(() => import('./components/DeliveryStaffView'));
 
 function MainContent() {
-  const { activeView, setActiveView, isHolidayClosed, holidayReason, isAdminOrStaff, setIsLoginOpen, storeAnnouncement } = useStore();
+  const {
+    activeView,
+    setActiveView,
+    isHolidayClosed,
+    holidayReason,
+    isAdminOrStaff,
+    setIsLoginOpen,
+    storeAnnouncement,
+    userPhone,
+    userName,
+    utilityType
+  } = useStore();
   const [isOnline, setIsOnline] = React.useState(navigator.onLine);
 
   React.useEffect(() => {
@@ -79,7 +90,7 @@ function MainContent() {
           </div>
         }
       >
-        {activeView === 'checkout' && <CheckoutView />}
+        {activeView === 'checkout' && <CheckoutView key={`${userPhone}-${userName}`} />}
         {activeView === 'tracking' && <OrderTrackingView />}
       </Suspense>
 
@@ -136,8 +147,8 @@ function MainContent() {
       {/* Global Overlays */}
       <ProductModal />
       <CartDrawer />
-      <LoginModal />
-      <UtilityServicesModal />
+      <LoginModal key={`login-${userPhone}-${userName}`} />
+      <UtilityServicesModal key={`util-${utilityType}`} />
     </main>
   );
 }
