@@ -482,10 +482,17 @@ export default function CheckoutView() {
             {/* Cart Items List */}
             <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
               {cart.map((item) => (
-                <div key={item.id} className="flex items-center justify-between text-xs py-1 border-b border-hairline/40">
+                <div key={item.cartItemId || item.id} className="flex items-center justify-between text-xs py-1.5 border-b border-hairline/40">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-forest">{item.quantity}x</span>
-                    <span className="font-medium text-ink truncate max-w-[170px]">{item.name}</span>
+                    <div>
+                      <span className="font-medium text-ink truncate max-w-[170px] block">{item.name}</span>
+                      {item.unit && (
+                        <span className="text-[10px] text-ink-soft bg-cardcream px-1.5 py-0.2 rounded border border-hairline font-medium inline-block mt-0.5">
+                          {item.unit}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className="font-mono text-ink font-semibold">₹{item.price * item.quantity}</span>
                 </div>

@@ -143,11 +143,12 @@ export default function CartDrawer() {
               ) : (
                 cart.map((item) => {
                   const liveProduct = products.find((p) => p.id === item.id);
-                  const maxStock = liveProduct ? liveProduct.stock : item.stock;
+                  const maxStock = item.selectedVariant?.stock ?? liveProduct?.stock ?? item.stock;
+                  const itemId = item.cartItemId || item.id;
 
                   return (
                     <div
-                      key={item.id}
+                      key={itemId}
                       className="bg-cardcream border border-hairline rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-2.5 sm:gap-3 shadow-xs"
                     >
                       <div className="w-14 h-14 bg-paper rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0 border border-hairline/60">
@@ -169,8 +170,10 @@ export default function CartDrawer() {
                         <h4 className="font-serif font-semibold text-xs sm:text-sm text-ink truncate">
                           {item.name}
                         </h4>
-                        <div className="flex items-center gap-1.5 text-[11px] text-ink-soft font-sans mt-0.5">
-                          <span>{item.unit}</span>
+                        <div className="flex items-center gap-1.5 text-[11px] text-ink-soft font-sans mt-0.5 flex-wrap">
+                          <span className="px-1.5 py-0.5 rounded-md bg-forest/10 text-forest font-semibold text-[10px] border border-forest/20">
+                            {item.unit}
+                          </span>
                           <span>•</span>
                           <span className="font-medium text-ink font-mono">₹{item.price}</span>
                           <span>•</span>
@@ -189,7 +192,7 @@ export default function CartDrawer() {
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                         <div className="flex items-center bg-paper border border-hairline rounded-xl overflow-hidden shadow-2xs">
                           <button
-                            onClick={() => updateCartQuantity(item.id, -1)}
+                            onClick={() => updateCartQuantity(itemId, -1)}
                             className="p-2 sm:p-1.5 hover:bg-cardcream text-ink transition-colors min-w-[34px] min-h-[34px] flex items-center justify-center active:scale-90"
                             aria-label="Decrease quantity"
                           >
@@ -199,7 +202,7 @@ export default function CartDrawer() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateCartQuantity(item.id, 1)}
+                            onClick={() => updateCartQuantity(itemId, 1)}
                             disabled={item.quantity >= maxStock}
                             className="p-2 sm:p-1.5 hover:bg-cardcream text-ink transition-colors disabled:opacity-30 min-w-[34px] min-h-[34px] flex items-center justify-center active:scale-90"
                             aria-label="Increase quantity"
@@ -209,7 +212,7 @@ export default function CartDrawer() {
                         </div>
 
                         <button
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(itemId)}
                           className="p-2 text-kumkum hover:bg-kumkum/10 rounded-xl transition-colors min-w-[34px] min-h-[34px] flex items-center justify-center"
                           title="Remove item"
                         >

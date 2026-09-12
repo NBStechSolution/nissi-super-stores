@@ -623,7 +623,7 @@ export default function AdminDashboard() {
                           )}
                         </td>
                         <td className="p-3 text-ink-soft">
-                          {(ord.items || []).map((i) => i.name || 'Item').join(', ')}
+                          {(ord.items || []).map((i) => `${i.name || 'Item'}${i.unit ? ` (${i.unit})` : ''}`).join(', ')}
                         </td>
                         <td className="p-3 font-mono font-bold text-forest">
                           ₹{ord.totalAmount}
@@ -1667,7 +1667,7 @@ export default function AdminDashboard() {
               </div>
               {(printOrder.items || []).map((it, idx) => (
                 <div key={idx} className="flex justify-between">
-                  <span className="truncate max-w-[200px]">{it.name || 'Item'}</span>
+                  <span className="truncate max-w-[200px]">{it.name || 'Item'}{it.unit ? ` (${it.unit})` : ''}</span>
                   <span>{it.quantity || 1} x ₹{it.price || 0} = ₹{(it.quantity || 1) * (it.price || 0)}</span>
                 </div>
               ))}

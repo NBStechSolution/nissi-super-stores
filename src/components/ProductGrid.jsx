@@ -9,7 +9,6 @@ export default function ProductGrid() {
     searchQuery,
     setSearchQuery,
     addToCart,
-    cart,
     updateCartQuantity,
     setSelectedProduct,
     isStoreOpen,
@@ -22,9 +21,12 @@ export default function ProductGrid() {
     setProductToDelete,
     isManagerMode,
     toggleManagerMode,
-    isAdminOrStaff
+    isAdminOrStaff,
+    getProductVariants,
+    getItemQuantityInCart
   } = useStore();
 
+  const [selectedVariants, setSelectedVariants] = useState({});
   const [failedImages, setFailedImages] = useState({});
   const [isListening, setIsListening] = useState(false);
 
@@ -226,25 +228,34 @@ export default function ProductGrid() {
       {/* Product Cards Grid: 2-column on mobile, responsive up to 4-column on desktop */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6">
         {filteredProducts.map((product) => {
-          const cartItem = cart.find((item) => item.id === product.id);
-          const cartQty = cartItem ? cartItem.quantity : 0;
+          const variants = getProductVariants(product);
+          const hasVariants = variants.length > 1;
+          const activeVariantIndex = selectedVariants[product.id] ?? 0;
+          const activeVariant = variants[activeVariantIndex] || variants[0];
+          const activeUnit = activeVariant?.unit || product.unit;
+          const activePrice = activeVariant?.price ?? product.price;
+          const activeMrp = activeVariant?.mrp ?? product.mrp ?? activePrice;
+          const activeStock = activeVariant?.stock ?? product.stock;
+          const activeCartItemId = `${product.id}-${activeUnit.replace(/\s+/g, '')}`;
+
+          const cartQty = getItemQuantityInCart(product.id, activeUnit);
           const isFav = favorites.includes(product.id);
           const isImgFailed = failedImages[product.id];
           const discountPct =
-            product.mrp && product.mrp > product.price
-              ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+            activeMrp && activeMrp > activePrice
+              ? Math.round(((activeMrp - activePrice) / activeMrp) * 100)
               : 0;
 
           let stockBadgeText = t('inStock', 'In Stock');
           let stockBadgeStyle = 'bg-forest/10 text-forest border-forest/30';
           let isOutOfStock = false;
 
-          if (product.stock === 0) {
+          if (activeStock === 0) {
             stockBadgeText = t('outOfStock', 'Out of Stock');
             stockBadgeStyle = 'bg-kumkum/10 text-kumkum border-kumkum/30';
             isOutOfStock = true;
-          } else if (product.stock <= product.lowStockThreshold) {
-            stockBadgeText = `${product.stock} left`;
+          } else if (activeStock <= product.lowStockThreshold) {
+            stockBadgeText = `${activeStock} left`;
             stockBadgeStyle = 'bg-saffron-base/20 text-ink font-bold border-saffron-base/40';
           }
 
@@ -299,7 +310,7 @@ export default function ProductGrid() {
                     if (product.isUtility) {
                       openUtilityModal(product.utilityType);
                     } else {
-                      setSelectedProduct(product);
+                      setSelectedProduct({ ...product, initialVariantIndex: activeVariantIndex });
                     }
                   }}
                   className="w-full h-36 sm:h-44 rounded-xl sm:rounded-2xl flex items-center justify-center p-2 mb-2 sm:mb-3 cursor-pointer relative overflow-hidden transition-transform group-hover:scale-[1.02] border border-hairline/40 shadow-xs"
@@ -326,16 +337,52 @@ export default function ProductGrid() {
                   )}
                 </div>
 
-                {/* Product Title & Unit */}
+                {/* Product Title & Active Unit */}
                 <h3
-                  onClick={() => setSelectedProduct(product)}
+                  onClick={() => setSelectedProduct({ ...product, initialVariantIndex: activeVariantIndex })}
                   className="font-serif font-bold text-sm sm:text-base text-ink mb-0.5 group-hover:text-forest transition-colors cursor-pointer line-clamp-1"
                 >
                   {language === 'te' && product.nameTe ? product.nameTe : product.name}
                 </h3>
                 <span className="text-[11px] sm:text-xs text-ink-soft font-sans font-medium block mb-1">
-                  {product.unit}
+                  {activeUnit}
                 </span>
+
+                {/* Interactive Pack Size Pills for Multi-Variant Products */}
+                {hasVariants && (
+                  <div className="my-2">
+                    <div className="text-[10px] text-ink-soft/80 font-bold uppercase tracking-wider mb-1">
+                      {language === 'te' ? 'ప్యాక్ పరిమాణం ఎంచుకోండి:' : 'Pack Size:'}
+                    </div>
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none" onClick={(e) => e.stopPropagation()}>
+                      {variants.map((v, vIdx) => {
+                        const isSelected = vIdx === activeVariantIndex;
+                        const vQty = getItemQuantityInCart(product.id, v.unit);
+                        return (
+                          <button
+                            key={v.unit}
+                            type="button"
+                            onClick={() => setSelectedVariants((prev) => ({ ...prev, [product.id]: vIdx }))}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-semibold tracking-tight whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
+                              isSelected
+                                ? 'bg-forest text-paper border-forest shadow-xs font-bold ring-1 ring-forest/30 scale-[1.02]'
+                                : 'bg-paper text-ink hover:bg-cardcream border-hairline hover:border-forest/40'
+                            }`}
+                            title={`${v.unit} - ₹${v.price}`}
+                          >
+                            <span>{v.unit}</span>
+                            {vQty > 0 && (
+                              <span className={`ml-1 px-1 py-0.2 rounded-full text-[9px] ${isSelected ? 'bg-saffron-base text-ink font-bold' : 'bg-forest text-paper'}`}>
+                                {vQty}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <p className="hidden sm:block text-xs text-ink-soft font-sans mb-3 line-clamp-2 leading-relaxed">
                   {product.description}
                 </p>
@@ -349,11 +396,11 @@ export default function ProductGrid() {
                   ) : (
                     <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5 leading-tight">
                       <span className="font-serif font-bold text-base sm:text-lg text-ink">
-                        ₹{product.price}
+                        ₹{activePrice}
                       </span>
-                      {product.mrp > product.price && (
+                      {activeMrp > activePrice && (
                         <span className="text-[10px] sm:text-xs text-ink-soft/40 line-through">
-                          ₹{product.mrp}
+                          ₹{activeMrp}
                         </span>
                       )}
                     </div>
@@ -378,7 +425,7 @@ export default function ProductGrid() {
                 ) : cartQty > 0 ? (
                   <div className="flex items-center bg-forest text-paper rounded-xl shadow-xs overflow-hidden p-0.5 border border-hairline shrink-0 min-h-[38px]">
                     <button
-                      onClick={() => updateCartQuantity(product.id, -1)}
+                      onClick={() => updateCartQuantity(activeCartItemId, -1)}
                       className="p-2 sm:p-1.5 hover:bg-forest-soft active:scale-95 transition-all min-w-[32px] flex items-center justify-center"
                       aria-label="Decrease quantity"
                     >
@@ -388,9 +435,9 @@ export default function ProductGrid() {
                       {cartQty}
                     </span>
                     <button
-                      onClick={() => updateCartQuantity(product.id, 1)}
+                      onClick={() => updateCartQuantity(activeCartItemId, 1)}
                       className="p-2 sm:p-1.5 hover:bg-forest-soft active:scale-95 transition-all min-w-[32px] flex items-center justify-center"
-                      disabled={cartQty >= product.stock}
+                      disabled={cartQty >= activeStock}
                       aria-label="Increase quantity"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -398,10 +445,10 @@ export default function ProductGrid() {
                   </div>
                 ) : (
                   <button
-                    onClick={() => addToCart(product)}
-                    disabled={!isStoreOpen}
+                    onClick={() => addToCart(product, 1, activeVariant)}
+                    disabled={!isStoreOpen || isOutOfStock}
                     className={`px-3 sm:px-3.5 py-2 min-h-[38px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-xs active:scale-95 shrink-0 ${
-                      isStoreOpen
+                      isStoreOpen && !isOutOfStock
                         ? 'bg-saffron-gradient hover:brightness-105 text-ink'
                         : 'bg-ink/10 text-ink-soft/40 cursor-not-allowed'
                     }`}

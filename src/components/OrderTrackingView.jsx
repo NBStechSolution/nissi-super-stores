@@ -314,9 +314,16 @@ export default function OrderTrackingView() {
               <span className="font-mono font-bold text-forest">₹{activeOrder.totalAmount}</span>
             </h3>
             <div className="p-3.5 bg-paper rounded-xl border border-hairline space-y-2">
-              {(activeOrder.items || []).map((item) => (
-                <div key={item.id} className="flex justify-between items-center text-ink-soft">
-                  <span>{item.quantity}x {item.name}</span>
+              {(activeOrder.items || []).map((item, idx) => (
+                <div key={item.cartItemId || item.id || idx} className="flex justify-between items-center text-ink-soft text-xs">
+                  <span className="flex items-center gap-1.5 flex-wrap">
+                    <span>{item.quantity}x {item.name}</span>
+                    {item.unit && (
+                      <span className="px-1.5 py-0.2 rounded bg-cardcream text-ink text-[10px] font-semibold border border-hairline">
+                        {item.unit}
+                      </span>
+                    )}
+                  </span>
                   <span className="font-mono font-semibold text-ink">₹{item.price * item.quantity}</span>
                 </div>
               ))}

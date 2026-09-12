@@ -215,7 +215,7 @@ export default function DeliveryStaffView() {
                 <div className="text-xs space-y-1">
                   <span className="text-ink-soft font-bold">ITEMS TO DELIVER:</span>
                   <p className="text-ink font-medium">
-                    {(ord.items || []).map((i) => `${i.quantity || 1}x ${i.name || 'Item'}`).join(' • ')}
+                    {(ord.items || []).map((i) => `${i.quantity || 1}x ${i.name || 'Item'}${i.unit ? ` (${i.unit})` : ''}`).join(' • ')}
                   </p>
                 </div>
 

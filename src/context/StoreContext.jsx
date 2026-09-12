@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { INITIAL_PRODUCTS, INITIAL_ORDERS, TELUGU_TRANSLATIONS } from '../data/mockData';
+import { INITIAL_PRODUCTS, INITIAL_ORDERS, TELUGU_TRANSLATIONS, getProductVariants } from '../data/mockData';
 import { ADMIN_PHONE, ADMIN_SECURITY_PIN, PAYMENT_CONFIG } from '../data/paymentConfig';
 import {
   fetchProductsFromSupabase,
@@ -151,10 +151,17 @@ export const StoreProvider = ({ children }) => {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Purge any legacy coconut entries from localStorage cache
+          // Purge any legacy coconut entries and enrich with variants if missing
           const cleaned = parsed
             .filter((p) => p && p.category !== 'coconut' && !p.name?.toLowerCase().includes('coconut'))
-            .map((p) => (p.id === 'prod-4' && p.category === 'coconut' ? INITIAL_PRODUCTS.find((ip) => ip.id === 'prod-4') : p));
+            .map((p) => {
+              const defaultProd = INITIAL_PRODUCTS.find((ip) => ip.id === p.id);
+              const target = p.id === 'prod-4' && p.category === 'coconut' ? defaultProd : p;
+              if (defaultProd?.variants && (!target.variants || target.variants.length === 0)) {
+                return { ...target, variants: defaultProd.variants };
+              }
+              return target;
+            });
           if (cleaned.length > 0) return cleaned;
         }
       }
@@ -373,47 +380,68 @@ export const StoreProvider = ({ children }) => {
     return fallbackText || key;
   };
 
-  const addToCart = (product, qty = 1) => {
+  const addToCart = (product, qty = 1, selectedVariant = null) => {
     if (!isLoggedIn) {
       setLoginPromptMessage('Please sign in with your mobile number to add items to your cart and place orders.');
-      setPendingCartAction({ product, qty });
+      setPendingCartAction({ product, qty, selectedVariant });
       setIsLoginOpen(true);
       return false;
     }
 
-    if (product.stock <= 0) return false;
+    const activeStock = selectedVariant?.stock ?? product.stock;
+    if (activeStock <= 0) return false;
+
+    const activeUnit = selectedVariant?.unit || product.unit;
+    const activePrice = selectedVariant?.price ?? product.price;
+    const activeMrp = selectedVariant?.mrp ?? product.mrp ?? activePrice;
+    const cartItemId = selectedVariant
+      ? `${product.id}-${selectedVariant.unit.replace(/\s+/g, '')}`
+      : (product.cartItemId || product.id);
 
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.id === product.id);
+      const existing = prevCart.find((item) => (item.cartItemId || item.id) === cartItemId);
       if (existing) {
-        const newQty = Math.min(existing.quantity + qty, product.stock);
+        const newQty = Math.min(existing.quantity + qty, activeStock);
         return prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: newQty } : item
+          (item.cartItemId || item.id) === cartItemId
+            ? { ...item, quantity: newQty, unit: activeUnit, price: activePrice, mrp: activeMrp }
+            : item
         );
       }
-      return [...prevCart, { ...product, quantity: Math.min(qty, product.stock) }];
+      return [
+        ...prevCart,
+        {
+          ...product,
+          cartItemId,
+          unit: activeUnit,
+          price: activePrice,
+          mrp: activeMrp,
+          selectedVariant: selectedVariant || null,
+          quantity: Math.min(qty, activeStock)
+        }
+      ];
     });
     setIsCartOpen(true);
     return true;
   };
 
-  const updateCartQuantity = (productId, delta) => {
+  const updateCartQuantity = (cartItemIdOrProductId, delta) => {
     if (!isLoggedIn) {
       setLoginPromptMessage('Please sign in to update your cart.');
       setIsLoginOpen(true);
       return;
     }
 
-    const product = products.find((p) => p.id === productId);
-    if (!product) return;
-
     setCart((prevCart) => {
       return prevCart
         .map((item) => {
-          if (item.id === productId) {
+          const itemId = item.cartItemId || item.id;
+          if (itemId === cartItemIdOrProductId || item.id === cartItemIdOrProductId) {
             const nextQty = item.quantity + delta;
             if (nextQty <= 0) return null;
-            return { ...item, quantity: Math.min(nextQty, product.stock) };
+            const baseProduct = products.find((p) => p.id === item.id);
+            const stockLimit = item.selectedVariant?.stock ?? baseProduct?.stock ?? item.stock ?? 99;
+            return { ...item, quantity: Math.min(nextQty, stockLimit) };
           }
           return item;
         })
@@ -421,8 +449,25 @@ export const StoreProvider = ({ children }) => {
     });
   };
 
-  const removeFromCart = (productId) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  const removeFromCart = (cartItemIdOrProductId) => {
+    setCart((prevCart) =>
+      prevCart.filter((item) => {
+        const itemId = item.cartItemId || item.id;
+        return itemId !== cartItemIdOrProductId && item.id !== cartItemIdOrProductId;
+      })
+    );
+  };
+
+  const getItemQuantityInCart = (productId, selectedUnit = null) => {
+    if (!selectedUnit) {
+      return cart
+        .filter((item) => item.id === productId)
+        .reduce((sum, item) => sum + item.quantity, 0);
+    }
+    const matched = cart.find(
+      (item) => item.id === productId && (item.unit === selectedUnit || item.selectedVariant?.unit === selectedUnit)
+    );
+    return matched ? matched.quantity : 0;
   };
 
   const clearCart = () => setCart([]);
@@ -451,16 +496,35 @@ export const StoreProvider = ({ children }) => {
 
     // Automatically fulfill pending item addition right after sign-in
     if (pendingCartAction?.product) {
-      const { product, qty } = pendingCartAction;
+      const { product, qty, selectedVariant } = pendingCartAction;
+      const activeStock = selectedVariant?.stock ?? product.stock;
+      const activeUnit = selectedVariant?.unit || product.unit;
+      const activePrice = selectedVariant?.price ?? product.price;
+      const activeMrp = selectedVariant?.mrp ?? product.mrp ?? activePrice;
+      const cartItemId = selectedVariant
+        ? `${product.id}-${selectedVariant.unit.replace(/\s+/g, '')}`
+        : (product.cartItemId || product.id);
+
       setCart((prevCart) => {
-        const existing = prevCart.find((item) => item.id === product.id);
+        const existing = prevCart.find((item) => (item.cartItemId || item.id) === cartItemId);
         if (existing) {
-          const newQty = Math.min(existing.quantity + (qty || 1), product.stock);
+          const newQty = Math.min(existing.quantity + (qty || 1), activeStock);
           return prevCart.map((item) =>
-            item.id === product.id ? { ...item, quantity: newQty } : item
+            (item.cartItemId || item.id) === cartItemId ? { ...item, quantity: newQty } : item
           );
         }
-        return [...prevCart, { ...product, quantity: Math.min(qty || 1, product.stock) }];
+        return [
+          ...prevCart,
+          {
+            ...product,
+            cartItemId,
+            unit: activeUnit,
+            price: activePrice,
+            mrp: activeMrp,
+            selectedVariant: selectedVariant || null,
+            quantity: Math.min(qty || 1, activeStock)
+          }
+        ];
       });
       setPendingCartAction(null);
       setIsCartOpen(true);
@@ -705,9 +769,11 @@ export const StoreProvider = ({ children }) => {
 
     setProducts((prev) => {
       const updated = prev.map((prod) => {
-        const inCart = cart.find((item) => item.id === prod.id);
-        if (inCart) {
-          return { ...prod, stock: Math.max(0, prod.stock - inCart.quantity) };
+        const totalInCart = cart
+          .filter((item) => item.id === prod.id)
+          .reduce((sum, item) => sum + item.quantity, 0);
+        if (totalInCart > 0) {
+          return { ...prod, stock: Math.max(0, prod.stock - totalInCart) };
         }
         return prod;
       });
@@ -810,7 +876,14 @@ export const StoreProvider = ({ children }) => {
           localOnly.forEach((localProd) => {
             saveProductToSupabase(localProd).catch(() => {});
           });
-          const merged = [...remoteProducts, ...localOnly];
+          const enrichedRemote = remoteProducts.map((rp) => {
+            const defaultProd = INITIAL_PRODUCTS.find((ip) => ip.id === rp.id);
+            if (defaultProd?.variants && (!rp.variants || rp.variants.length === 0)) {
+              return { ...rp, variants: defaultProd.variants };
+            }
+            return rp;
+          });
+          const merged = [...enrichedRemote, ...localOnly];
           try {
             localStorage.setItem('nissi_products_v1', JSON.stringify(merged));
           } catch (e) {
@@ -1048,7 +1121,9 @@ export const StoreProvider = ({ children }) => {
         adminAuthSession,
         authenticateAdmin,
         revokeAdminAuth,
-        ADMIN_SECURITY_PIN
+        ADMIN_SECURITY_PIN,
+        getProductVariants,
+        getItemQuantityInCart
       }}
     >
       {children}
@@ -1078,7 +1153,9 @@ export const useStore = () => {
       isQuickAddOpen: false,
       setIsQuickAddOpen: () => {},
       productToDelete: null,
-      setProductToDelete: () => {}
+      setProductToDelete: () => {},
+      getProductVariants: () => [],
+      getItemQuantityInCart: () => 0
     };
   }
   return context;

@@ -7,27 +7,43 @@ export default function ProductModal() {
     selectedProduct,
     setSelectedProduct,
     addToCart,
-    cart,
     favorites,
     toggleFavorite,
     language,
     openSubscriptionModal,
     setProductToDelete,
     isManagerMode,
-    isAdminOrStaff
+    isAdminOrStaff,
+    getProductVariants,
+    getItemQuantityInCart
   } = useStore();
+
   const [qty, setQty] = useState(1);
+  const [variantIndex, setVariantIndex] = useState(selectedProduct?.initialVariantIndex || 0);
+  const [prevProductId, setPrevProductId] = useState(selectedProduct?.id);
+
+  if (selectedProduct && selectedProduct.id !== prevProductId) {
+    setPrevProductId(selectedProduct.id);
+    setVariantIndex(selectedProduct.initialVariantIndex || 0);
+    setQty(1);
+  }
 
   if (!selectedProduct) return null;
 
-  const cartItem = cart.find((i) => i.id === selectedProduct.id);
-  const currentCartQty = cartItem ? cartItem.quantity : 0;
-  const maxAvailable = selectedProduct.stock;
+  const variants = getProductVariants(selectedProduct);
+  const activeVariant = variants[variantIndex] || variants[0];
+  const activeUnit = activeVariant?.unit || selectedProduct.unit;
+  const activePrice = activeVariant?.price ?? selectedProduct.price;
+  const activeMrp = activeVariant?.mrp ?? selectedProduct.mrp ?? activePrice;
+  const activeStock = activeVariant?.stock ?? selectedProduct.stock;
+
+  const currentCartQty = getItemQuantityInCart(selectedProduct.id, activeUnit);
+  const maxAvailable = activeStock;
   const remainingAddable = Math.max(0, maxAvailable - currentCartQty);
   const isFav = favorites.includes(selectedProduct.id);
 
   const handleAdd = () => {
-    addToCart(selectedProduct, qty);
+    addToCart(selectedProduct, qty, activeVariant);
     setSelectedProduct(null);
   };
 
@@ -84,11 +100,11 @@ export default function ProductModal() {
               {(selectedProduct.category || 'General').toUpperCase()}
             </span>
             <span className="text-[11px] font-semibold text-ink-soft bg-cardcream px-2.5 py-0.5 rounded-full border border-hairline">
-              {selectedProduct.unit}
+              {activeUnit}
             </span>
             {currentCartQty > 0 && (
               <span className="text-[11px] font-bold text-forest bg-forest/10 px-2.5 py-0.5 rounded-full border border-forest/30">
-                ✓ {currentCartQty} already in basket
+                ✓ {currentCartQty} {activeUnit} in basket
               </span>
             )}
           </div>
@@ -101,18 +117,74 @@ export default function ProductModal() {
             {selectedProduct.description}
           </p>
 
+          {/* Interactive Pack Size Tiles for Multi-Variant Products */}
+          {variants.length > 1 && (
+            <div className="space-y-1.5 mb-3">
+              <label className="text-xs font-bold text-ink flex items-center justify-between">
+                <span>{language === 'te' ? 'ప్యాక్ పరిమాణం ఎంచుకోండి:' : 'Select Pack Size:'}</span>
+                <span className="text-[11px] font-semibold text-forest">
+                  {variants.length} options available
+                </span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {variants.map((v, idx) => {
+                  const isSelected = idx === variantIndex;
+                  const vQty = getItemQuantityInCart(selectedProduct.id, v.unit);
+                  const vDiscount = v.mrp && v.mrp > v.price ? Math.round(((v.mrp - v.price) / v.mrp) * 100) : 0;
+                  return (
+                    <button
+                      key={v.unit}
+                      type="button"
+                      onClick={() => {
+                        setVariantIndex(idx);
+                        setQty(1);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer ${
+                        isSelected
+                          ? 'bg-forest/5 border-forest ring-2 ring-forest/30 shadow-xs'
+                          : 'bg-cardcream/60 border-hairline hover:border-forest/40 hover:bg-cardcream'
+                      }`}
+                    >
+                      {vDiscount > 0 && (
+                        <span className="absolute -top-1.5 right-1.5 bg-kumkum text-paper text-[9px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs">
+                          {vDiscount}% OFF
+                        </span>
+                      )}
+                      <div>
+                        <span className={`block text-xs font-bold ${isSelected ? 'text-forest' : 'text-ink'}`}>
+                          {v.unit}
+                        </span>
+                        <div className="flex items-baseline gap-1 mt-0.5">
+                          <span className="font-serif font-bold text-sm text-ink">₹{v.price}</span>
+                          {v.mrp > v.price && (
+                            <span className="text-[10px] text-ink-soft/50 line-through">₹{v.mrp}</span>
+                          )}
+                        </div>
+                      </div>
+                      {vQty > 0 && (
+                        <span className="mt-1 text-[10px] font-semibold text-forest bg-forest/10 px-1.5 py-0.2 rounded-md self-start">
+                          {vQty} in cart
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Pricing Row */}
           <div className="flex items-baseline gap-3">
             <span className="font-serif font-bold text-2xl text-ink">
-              ₹{selectedProduct.price}
+              ₹{activePrice}
             </span>
-            {selectedProduct.mrp > selectedProduct.price && (
+            {activeMrp > activePrice && (
               <>
                 <span className="text-sm text-ink-soft/40 line-through">
-                  ₹{selectedProduct.mrp}
+                  ₹{activeMrp}
                 </span>
                 <span className="text-xs font-semibold text-kumkum bg-kumkum/10 px-2 py-0.5 rounded-md">
-                  Save ₹{selectedProduct.mrp - selectedProduct.price}
+                  Save ₹{activeMrp - activePrice} ({Math.round(((activeMrp - activePrice) / activeMrp) * 100)}% OFF)
                 </span>
               </>
             )}
@@ -178,10 +250,10 @@ export default function ProductModal() {
         {remainingAddable > 0 ? (
           <button
             onClick={handleAdd}
-            className="w-full py-3.5 bg-saffron-gradient text-ink font-bold rounded-xl text-sm shadow-md hover:brightness-105 transition-all flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-saffron-gradient text-ink font-bold rounded-xl text-sm shadow-md hover:brightness-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4" />
-            <span>Add {qty} to cart • ₹{selectedProduct.price * qty}</span>
+            <span>Add {qty} to cart • ₹{activePrice * qty}</span>
           </button>
         ) : (
           <button

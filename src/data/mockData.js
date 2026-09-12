@@ -14,8 +14,8 @@ export const INITIAL_PRODUCTS = [
   // Grocery
   {
     id: 'prod-1',
-    name: 'Sona Masoori Raw Rice (5kg)',
-    nameTe: 'సోనా మసూరి బియ్యం (5కిలోలు)',
+    name: 'Sona Masoori Raw Rice',
+    nameTe: 'సోనా మసూరి బియ్యం',
     category: 'grocery',
     price: 340,
     mrp: 380,
@@ -26,39 +26,55 @@ export const INITIAL_PRODUCTS = [
     description: 'Premium long-grain aged raw rice directly sourced from local rice mills.',
     image2D: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80',
     fallbackEmoji: '🌾',
-    imageBg: '#F7F3EB'
+    imageBg: '#F7F3EB',
+    variants: [
+      { unit: '1 kg Pack', price: 72, mrp: 80, stock: 35 },
+      { unit: '5 kg Bag', price: 340, mrp: 380, stock: 24 },
+      { unit: '10 kg Bag', price: 670, mrp: 750, stock: 15 },
+      { unit: '25 kg Bag', price: 1650, mrp: 1850, stock: 8 }
+    ]
   },
   {
     id: 'prod-2',
     name: 'Unpolished Toor Dal (Yellow Lentils)',
-    nameTe: 'కందిపప్పు (1కిలో)',
+    nameTe: 'కందిపప్పు',
     category: 'grocery',
     price: 155,
     mrp: 175,
     unit: '1 kg Pack',
-    stock: 3,
+    stock: 12,
     lowStockThreshold: 5,
-    badge: 'Low Stock',
+    badge: 'Best Quality',
     description: 'Protein-rich unpolished yellow split pulses free from added colors.',
     image2D: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
     fallbackEmoji: '🟡',
-    imageBg: '#FDF6E2'
+    imageBg: '#FDF6E2',
+    variants: [
+      { unit: '500g Pack', price: 80, mrp: 90, stock: 20 },
+      { unit: '1 kg Pack', price: 155, mrp: 175, stock: 12 },
+      { unit: '2 kg Pack', price: 305, mrp: 345, stock: 8 }
+    ]
   },
   {
     id: 'prod-6',
     name: 'Aachi Guntur Red Chilli Powder',
-    nameTe: 'గుంటూరు కారం పొడి (200గ్రా)',
+    nameTe: 'గుంటూరు కారం పొడి',
     category: 'grocery',
     price: 85,
     mrp: 95,
     unit: '200g Box',
-    stock: 4,
+    stock: 18,
     lowStockThreshold: 5,
-    badge: 'Low Stock',
+    badge: 'Fiery Spice',
     description: 'Fiery spice ground from hand-picked sun-dried Guntur chillies.',
     image2D: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=600&q=80',
     fallbackEmoji: '🌶️',
-    imageBg: '#FCEBEA'
+    imageBg: '#FCEBEA',
+    variants: [
+      { unit: '100g Pack', price: 45, mrp: 50, stock: 25 },
+      { unit: '200g Box', price: 85, mrp: 95, stock: 18 },
+      { unit: '500g Pack', price: 205, mrp: 230, stock: 10 }
+    ]
   },
 
   // Snacks & Munchies (Expanded basic snacks list)
@@ -101,14 +117,19 @@ export const INITIAL_PRODUCTS = [
     category: 'snacks',
     price: 55,
     mrp: 60,
-    unit: '200g Pack',
+    unit: '150g Pouch',
     stock: 18,
     lowStockThreshold: 5,
     badge: 'Spicy Sev',
     description: 'Authentic spicy moth bean and chickpea flour crispy bhujia sev.',
     image2D: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=80',
     fallbackEmoji: '🥨',
-    imageBg: '#FAF3E0'
+    imageBg: '#FAF3E0',
+    variants: [
+      { unit: '150g Pouch', price: 55, mrp: 60, stock: 18 },
+      { unit: '400g Family Pack', price: 135, mrp: 150, stock: 12 },
+      { unit: '1 kg Jumbo', price: 310, mrp: 350, stock: 6 }
+    ]
   },
   {
     id: 'prod-16',
@@ -163,7 +184,7 @@ export const INITIAL_PRODUCTS = [
   {
     id: 'prod-3',
     name: 'Heritage Special Toned Fresh Milk',
-    nameTe: 'హెరిటేజ్ టోన్డ్ పాలు (500మి.లీ)',
+    nameTe: 'హెరిటేజ్ టోన్డ్ పాలు',
     category: 'milk',
     price: 32,
     mrp: 34,
@@ -174,12 +195,16 @@ export const INITIAL_PRODUCTS = [
     description: 'Pasteurized homogenised toned milk delivered fresh every morning.',
     image2D: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80',
     fallbackEmoji: '🥛',
-    imageBg: '#EBF4FC'
+    imageBg: '#EBF4FC',
+    variants: [
+      { unit: '500 ml Pouch', price: 32, mrp: 34, stock: 18 },
+      { unit: '1 Litre (2 Pouches)', price: 64, mrp: 68, stock: 15 }
+    ]
   },
   {
     id: 'prod-10',
     name: 'Amul Pure Cow Ghee Jar',
-    nameTe: 'అముల్ ఆవు నెయ్యి (500మి.లీ)',
+    nameTe: 'అముల్ ఆవు నెయ్యి',
     category: 'milk',
     price: 330,
     mrp: 350,
@@ -190,7 +215,12 @@ export const INITIAL_PRODUCTS = [
     description: 'Golden granular cow ghee crafted using classic butter churning methods.',
     image2D: 'https://images.unsplash.com/photo-1631451095765-2c91616fc9e6?auto=format&fit=crop&w=600&q=80',
     fallbackEmoji: '🧈',
-    imageBg: '#FFF9E6'
+    imageBg: '#FFF9E6',
+    variants: [
+      { unit: '200 ml Jar', price: 145, mrp: 155, stock: 15 },
+      { unit: '500 ml Jar', price: 330, mrp: 350, stock: 8 },
+      { unit: '1 Litre Tin', price: 640, mrp: 690, stock: 5 }
+    ]
   },
 
   // Drinks & Beverages
@@ -237,14 +267,19 @@ export const INITIAL_PRODUCTS = [
     category: 'pickles',
     price: 135,
     mrp: 150,
-    unit: '300g Glass Jar',
+    unit: '500g Jar',
     stock: 9,
     lowStockThreshold: 3,
     badge: 'Authentic',
     description: 'Traditional Andhra spicy raw mango pickle made with pure sesame oil.',
     image2D: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=600&q=80',
     fallbackEmoji: '🫙',
-    imageBg: '#FCF3D7'
+    imageBg: '#FCF3D7',
+    variants: [
+      { unit: '300g Glass Jar', price: 90, mrp: 100, stock: 14 },
+      { unit: '500g Jar', price: 135, mrp: 150, stock: 9 },
+      { unit: '1 kg Tub', price: 260, mrp: 290, stock: 5 }
+    ]
   },
 
   // Pooja Items
@@ -268,8 +303,8 @@ export const INITIAL_PRODUCTS = [
   // Pure Desi Cow Ghee
   {
     id: 'prod-4',
-    name: 'Pure Desi Cow Ghee (500ml)',
-    nameTe: 'స్వచ్ఛమైన ఆవు నెయ్యి (500మి.లీ)',
+    name: 'Pure Desi Cow Ghee',
+    nameTe: 'స్వచ్ఛమైన ఆవు నెయ్యి',
     category: 'grocery',
     price: 320,
     mrp: 350,
@@ -280,7 +315,12 @@ export const INITIAL_PRODUCTS = [
     description: 'Traditional golden bilona-churned cow ghee with rich grainy texture and divine aroma.',
     image2D: 'https://images.unsplash.com/photo-1589927986089-35812388d1f4?auto=format&fit=crop&w=600&q=80',
     fallbackEmoji: '🧈',
-    imageBg: '#FFFBEB'
+    imageBg: '#FFFBEB',
+    variants: [
+      { unit: '200 ml Jar', price: 140, mrp: 150, stock: 12 },
+      { unit: '500 ml Jar', price: 320, mrp: 350, stock: 18 },
+      { unit: '1 Litre Tin', price: 620, mrp: 680, stock: 7 }
+    ]
   },
 
   // Utility Bill Payments
@@ -397,3 +437,27 @@ export const SALES_TREND_DATA = [
   { time: '6 PM', orders: 110, revenue: 29800, emergency: 36 },
   { time: '8 PM', orders: 135, revenue: 38200, emergency: 42 }
 ];
+
+/**
+ * Returns the pack size / weight variants available for a given product.
+ * If the product has a custom variants array, it returns that.
+ * Otherwise, it creates a fallback single-variant array using the product's base price, mrp, and unit.
+ */
+export function getProductVariants(product) {
+  if (!product) return [];
+  if (Array.isArray(product.variants) && product.variants.length > 0) {
+    return product.variants;
+  }
+  const defaultProd = INITIAL_PRODUCTS.find((p) => p.id === product.id);
+  if (defaultProd && Array.isArray(defaultProd.variants) && defaultProd.variants.length > 0) {
+    return defaultProd.variants;
+  }
+  return [
+    {
+      unit: product.unit || '1 Unit',
+      price: Number(product.price) || 0,
+      mrp: Number(product.mrp ?? product.price) || 0,
+      stock: Number(product.stock) || 0
+    }
+  ];
+}
