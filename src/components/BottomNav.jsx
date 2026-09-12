@@ -13,6 +13,7 @@ export default function BottomNav() {
     userName,
     setIsLoginOpen,
     setSelectedCategory,
+    orders,
     t,
     language
   } = useStore();
@@ -34,12 +35,13 @@ export default function BottomNav() {
 
   const isHome = activeView === 'home';
   const isTracking = activeView === 'tracking';
+  const hasActiveOrder = orders && orders.some((o) => o.status !== 'Delivered');
 
   return (
     <>
       {/* Floating Quick-Commerce Cart Pill on Mobile */}
       {cartItemCount > 0 && activeView !== 'checkout' && (
-        <div className="md:hidden fixed bottom-18 left-3 right-3 z-40 animate-slide-up pointer-events-auto">
+        <div className="md:hidden fixed bottom-[72px] left-3 right-3 z-40 animate-slide-up pointer-events-auto">
           <div
             onClick={() => setIsCartOpen(true)}
             className="flex items-center justify-between px-4 py-3 bg-forest text-paper rounded-2xl shadow-xl border border-forest-soft cursor-pointer hover:brightness-105 active:scale-[0.98] transition-all"
@@ -70,13 +72,13 @@ export default function BottomNav() {
       )}
 
       {/* Modern App Bottom Navigation Bar for Mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-paper/95 backdrop-blur-lg border-t border-hairline shadow-2xl px-2 py-1.5 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-paper/95 backdrop-blur-lg border-t border-hairline shadow-2xl px-2 py-1.5 pb-safe">
         <div className="grid grid-cols-4 items-center">
           
           {/* 1. Store / Home */}
           <button
             onClick={handleStoreTab}
-            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all ${
               isHome
                 ? 'text-forest font-bold'
                 : 'text-ink-soft hover:text-ink'
@@ -88,12 +90,13 @@ export default function BottomNav() {
             <span className="text-[10px] tracking-tight mt-0.5">
               {t('store', language === 'te' ? 'స్టోర్' : 'Store')}
             </span>
+            <span className={`w-4 h-0.5 rounded-full mt-0.5 transition-all ${isHome ? 'bg-forest' : 'bg-transparent'}`} />
           </button>
 
           {/* 2. Categories */}
           <button
             onClick={handleCategoryTab}
-            className="flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-ink-soft hover:text-ink transition-all"
+            className="flex flex-col items-center justify-center py-1 px-1 rounded-xl text-ink-soft hover:text-ink transition-all"
           >
             <div className="p-1 rounded-xl">
               <Layers className="w-5 h-5" />
@@ -101,29 +104,34 @@ export default function BottomNav() {
             <span className="text-[10px] tracking-tight mt-0.5">
               {t('categories', language === 'te' ? 'విభాగాలు' : 'Categories')}
             </span>
+            <span className="w-4 h-0.5 rounded-full mt-0.5 bg-transparent" />
           </button>
 
           {/* 3. Orders / Tracking */}
           <button
             onClick={() => setActiveView('tracking')}
-            className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all ${
               isTracking
                 ? 'text-forest font-bold'
                 : 'text-ink-soft hover:text-ink'
             }`}
           >
-            <div className={`p-1 rounded-xl transition-colors ${isTracking ? 'bg-forest/10' : ''}`}>
+            <div className={`relative p-1 rounded-xl transition-colors ${isTracking ? 'bg-forest/10' : ''}`}>
               <Package className="w-5 h-5" />
+              {hasActiveOrder && (
+                <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-saffron-base ring-1 ring-paper" />
+              )}
             </div>
             <span className="text-[10px] tracking-tight mt-0.5">
               {t('orders', language === 'te' ? 'ఆర్డర్లు' : 'Orders')}
             </span>
+            <span className={`w-4 h-0.5 rounded-full mt-0.5 transition-all ${isTracking ? 'bg-forest' : 'bg-transparent'}`} />
           </button>
 
           {/* 4. Account */}
           <button
             onClick={() => setIsLoginOpen(true)}
-            className="flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-ink-soft hover:text-ink transition-all"
+            className="flex flex-col items-center justify-center py-1 px-1 rounded-xl text-ink-soft hover:text-ink transition-all"
           >
             <div className={`p-1 rounded-xl ${isLoggedIn ? 'bg-forest/10 text-forest' : ''}`}>
               <User className="w-5 h-5" />
@@ -131,6 +139,7 @@ export default function BottomNav() {
             <span className="text-[10px] tracking-tight mt-0.5 truncate max-w-[65px]">
               {isLoggedIn ? (userName ? userName.split(' ')[0] : 'Profile') : t('login', 'Account')}
             </span>
+            <span className="w-4 h-0.5 rounded-full mt-0.5 bg-transparent" />
           </button>
 
         </div>
@@ -138,3 +147,4 @@ export default function BottomNav() {
     </>
   );
 }
+

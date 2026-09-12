@@ -33,36 +33,36 @@ export default function Header() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
 
         {/* Logo & Brand Identity */}
-        <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setActiveView('home')}>
+        <div className="flex items-center gap-2 sm:gap-3 cursor-pointer group min-w-0" onClick={() => setActiveView('home')}>
           <img
             src="/logo.jpeg"
             alt="Nissi Super Stores Logo"
-            className="w-11 h-11 rounded-full object-cover shadow-md ring-2 ring-forest/30 group-hover:ring-forest group-hover:scale-105 transition-all duration-300"
+            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover shadow-md ring-2 ring-forest/30 group-hover:ring-forest group-hover:scale-105 transition-all duration-300 shrink-0"
           />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-serif font-bold text-xl text-ink tracking-tight group-hover:text-forest transition-colors">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="font-serif font-bold text-base sm:text-xl text-ink tracking-tight truncate group-hover:text-forest transition-colors">
                 {t('storeName', 'Nissi Super Stores')}
               </span>
-              <span className="text-[10px] px-2 py-0.5 bg-saffron-base/20 text-ink font-bold rounded-full border border-saffron-base/40">
+              <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 bg-saffron-base/20 text-ink font-bold rounded-full border border-saffron-base/40 shrink-0">
                 Kirana
               </span>
             </div>
-            <p className="text-[11px] text-ink-soft font-sans tracking-wide">
+            <p className="hidden sm:block text-[11px] text-ink-soft font-sans tracking-wide">
               by NBS Tech Solutions
             </p>
           </div>
         </div>
 
         {/* Store Status Badge & Delivery Window Pill */}
-        <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3">
-          {/* Desktop & Mobile Store Status */}
+        <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
+          {/* Desktop & Tablet Store Status (Hidden on mobile to save space for customers) */}
           <button
             onClick={() => setIsStoreOpen(!isStoreOpen)}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold border transition-all duration-200 ${
+            className={`hidden md:flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold border transition-all duration-200 ${
               isStoreOpen
                 ? 'bg-forest/10 border-forest/30 text-forest hover:bg-forest/20'
                 : 'bg-kumkum/10 border-kumkum/30 text-kumkum hover:bg-kumkum/20'
@@ -74,7 +74,7 @@ export default function Header() {
                 isStoreOpen ? 'bg-forest animate-pulse-emerald' : 'bg-kumkum'
               }`}
             />
-            <span className="hidden xs:inline">{isStoreOpen ? t('storeOpen', 'Open') : t('storeClosed', 'Closed')}</span>
+            <span>{isStoreOpen ? t('storeOpen', 'Open') : t('storeClosed', 'Closed')}</span>
           </button>
 
           <div className="hidden lg:flex items-center gap-1.5 px-3.5 py-1.5 bg-cardcream border border-hairline rounded-full text-xs text-ink font-medium shadow-xs">

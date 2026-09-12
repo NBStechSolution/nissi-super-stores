@@ -19,8 +19,8 @@ export default function CategoryRail() {
   };
 
   return (
-    <div id="category-rail-section" className="w-full mb-6 scroll-mt-20">
-      <div className="flex items-center justify-between mb-3 px-1">
+    <div id="category-rail-section" className="w-full mb-4 sm:mb-6 scroll-mt-20">
+      <div className="hidden sm:flex items-center justify-between mb-3 px-1">
         <h2 className="text-lg font-serif font-semibold text-ink">
           {t('exploreCategories', language === 'te' ? 'విభాగాలు' : 'Explore Categories')}
         </h2>
@@ -29,7 +29,7 @@ export default function CategoryRail() {
         </span>
       </div>
 
-      <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
+      <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto pb-2 scrollbar-none no-scrollbar -mx-1 px-1">
         {CATEGORIES.map((cat) => {
           const isSelected = selectedCategory === cat.id;
           const count =
@@ -46,13 +46,13 @@ export default function CategoryRail() {
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 border ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2.5 sm:py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 border min-h-[38px] active:scale-95 ${
                 isSelected
-                  ? 'bg-saffron-gradient text-ink border-saffron-base shadow-md scale-[1.03]'
+                  ? 'bg-saffron-gradient text-ink border-saffron-base shadow-md ring-2 ring-saffron-base/50 scale-[1.02]'
                   : 'bg-cardcream text-ink-soft border-hairline hover:bg-paper hover:border-forest/40'
               }`}
             >
-              <span className="text-base">{cat.icon}</span>
+              <span className="text-lg sm:text-base leading-none">{cat.icon}</span>
               <span>{catTitle}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${

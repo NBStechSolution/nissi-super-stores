@@ -215,14 +215,14 @@ export default function OrderTrackingView() {
       </div>
 
       {/* Main Horizontal Timeline Card */}
-      <div className="bg-cardcream border border-hairline rounded-crate p-6 sm:p-8 shadow-md space-y-8">
+      <div className="bg-cardcream border border-hairline rounded-2xl sm:rounded-crate p-4 sm:p-8 shadow-md space-y-6 sm:space-y-8">
 
         {!isCancelled ? (
-          <div className="relative pt-4 pb-2">
-            <div className="absolute top-8 left-6 right-6 h-1.5 bg-hairline/70 rounded-full" />
+          <div className="relative pt-2 sm:pt-4 pb-2">
+            <div className="absolute top-6 sm:top-8 left-4 right-4 sm:left-6 sm:right-6 h-1 sm:h-1.5 bg-hairline/70 rounded-full" />
 
             <motion.div
-              className="absolute top-8 left-6 h-1.5 bg-forest rounded-full"
+              className="absolute top-6 sm:top-8 left-4 sm:left-6 h-1 sm:h-1.5 bg-forest rounded-full"
               initial={{ width: '0%' }}
               animate={{ width: `${calculateProgressPercent()}%` }}
               transition={{ duration: 0.8, ease: 'easeInOut' }}
@@ -234,13 +234,13 @@ export default function OrderTrackingView() {
                 const isCurrent = index === activeStepIndex;
 
                 return (
-                  <div key={step.id} className="flex flex-col items-center text-center max-w-[80px]">
+                  <div key={step.id} className="flex flex-col items-center text-center max-w-[68px] sm:max-w-[80px]">
                     <motion.div
                       animate={{
-                        scale: isCurrent ? 1.2 : 1,
-                        boxShadow: isCurrent ? '0 0 16px rgba(18, 48, 39, 0.4)' : 'none'
+                        scale: isCurrent ? 1.15 : 1,
+                        boxShadow: isCurrent ? '0 0 14px rgba(18, 48, 39, 0.35)' : 'none'
                       }}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-base border-2 transition-all ${
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-base border-2 transition-all shrink-0 ${
                         isCompleted
                           ? 'bg-forest text-paper border-forest'
                           : 'bg-paper text-ink-soft/40 border-hairline'
@@ -249,7 +249,7 @@ export default function OrderTrackingView() {
                       {isCompleted ? step.icon : index + 1}
                     </motion.div>
                     <span
-                      className={`text-[11px] font-semibold mt-2.5 leading-tight ${
+                      className={`text-[10px] sm:text-[11px] font-semibold mt-1.5 sm:mt-2.5 leading-tight ${
                         isCurrent
                           ? 'text-forest font-bold'
                           : isCompleted
@@ -259,7 +259,7 @@ export default function OrderTrackingView() {
                     >
                       {step.label}
                     </span>
-                    <span className="text-[10px] text-ink-soft/60 font-mono mt-0.5">
+                    <span className="hidden xs:inline text-[9px] sm:text-[10px] text-ink-soft/60 font-mono mt-0.5">
                       {step.time}
                     </span>
                   </div>
