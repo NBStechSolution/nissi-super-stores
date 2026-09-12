@@ -6,6 +6,8 @@ export default function LoginModal() {
   const {
     isLoginOpen,
     setIsLoginOpen,
+    loginPromptMessage,
+    setLoginPromptMessage,
     loginDirect,
     isLoggedIn,
     userName,
@@ -25,6 +27,7 @@ export default function LoginModal() {
   const handleClose = () => {
     setIsLoginOpen(false);
     setError('');
+    if (setLoginPromptMessage) setLoginPromptMessage('');
   };
 
   const handleDirectLogin = (e) => {
@@ -153,6 +156,13 @@ export default function LoginModal() {
               <h2 className="font-serif font-bold text-xl text-ink">Welcome to Nissi</h2>
               <p className="text-xs text-ink-soft">Enter your details to sign in instantly (No OTP required)</p>
             </div>
+
+            {loginPromptMessage && (
+              <div className="p-3 bg-saffron-base/15 border border-saffron-base/40 rounded-2xl text-xs text-ink font-semibold flex items-center gap-2.5 animate-fade-in shadow-xs">
+                <span className="text-base shrink-0">🛍️</span>
+                <span className="leading-snug">{loginPromptMessage}</span>
+              </div>
+            )}
 
             {error && (
               <div className="p-2.5 bg-kumkum/10 border border-kumkum/30 rounded-xl text-xs text-kumkum text-center font-medium">

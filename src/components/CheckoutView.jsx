@@ -21,7 +21,9 @@ import {
   QrCode,
   Smartphone,
   Banknote,
-  CheckCircle2
+  CheckCircle2,
+  AlertTriangle,
+  RotateCcw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStore } from '../context/StoreContext';
@@ -38,7 +40,6 @@ export default function CheckoutView() {
     applyCoupon,
     removeCoupon,
     discountAmount,
-    PROMO_COUPONS,
     createOrder,
     setActiveView,
     isStoreOpen,
@@ -47,18 +48,22 @@ export default function CheckoutView() {
     PAYMENT_CONFIG,
     isLoggedIn,
     userName,
-    userPhone
+    userPhone,
+    setIsLoginOpen,
+    setLoginPromptMessage
   } = useStore();
 
   const [formData, setFormData] = useState(() => ({
-    name: userName || 'Kavitha Reddy',
-    phone: userPhone ? (userPhone.startsWith('+91') ? userPhone : `+91 ${userPhone}`) : '+91 98490 12345',
+    name: userName || '',
+    phone: userPhone ? (userPhone.startsWith('+91') ? userPhone : `+91 ${userPhone}`) : '',
     address: 'Flat 402, Sai Residency, Jubilee Hills Road No. 36',
     pincode: '500033'
   }));
 
   const [formError, setFormError] = useState('');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [paymentFailed, setPaymentFailed] = useState(false);
+  const [paymentErrorMessage, setPaymentErrorMessage] = useState('');
 
   const [lastUserKey, setLastUserKey] = useState({ name: userName, phone: userPhone });
   if (isLoggedIn && (lastUserKey.name !== userName || lastUserKey.phone !== userPhone)) {
@@ -129,6 +134,8 @@ export default function CheckoutView() {
 
   const triggerAutoPaymentSuccess = useCallback((customUtr) => {
     setIsAutoVerifying(true);
+    setPaymentFailed(false);
+    setPaymentErrorMessage('');
     setAutoVerifyStep('Connecting to Axis Bank / NPCI gateway...');
 
     setTimeout(() => {
@@ -164,6 +171,13 @@ export default function CheckoutView() {
       }, 1200);
     }, 1500);
   }, [grandTotal, createOrder, formData, deliveryType, activeUpiId, paymentProofImage]);
+
+  const triggerAutoPaymentFailure = (customMsg) => {
+    setIsAutoVerifying(false);
+    setIsUpiApproved(false);
+    setPaymentFailed(true);
+    setPaymentErrorMessage(customMsg || 'Axis Bank / NPCI gateway could not confirm this transaction. Please try again or provide your 12-digit UTR.');
+  };
 
   const handleLaunchUpiApp = (appUrl) => {
     try {
@@ -227,6 +241,15 @@ export default function CheckoutView() {
   const handleSubmitOrder = (e) => {
     e.preventDefault();
     setFormError('');
+    setPaymentFailed(false);
+    setPaymentErrorMessage('');
+
+    if (!isLoggedIn) {
+      setLoginPromptMessage('Please sign in with your mobile number to place your order.');
+      setIsLoginOpen(true);
+      return;
+    }
+
     if (cart.length === 0) {
       setFormError('Your cart is empty. Please add items before placing order.');
       return;
@@ -246,6 +269,17 @@ export default function CheckoutView() {
       return;
     }
 
+    // STRICT PAYMENT REQUIREMENT FOR ONLINE PAYMENT:
+    // Order MUST ONLY be confirmed if payment was successful! If it was fail, ask to try again!
+    if (paymentMethod === 'Online' && !isUpiApproved) {
+      setPaymentFailed(true);
+      setPaymentErrorMessage('Online payment has not been verified yet. Please complete your UPI payment and auto-verify or click "I Have Paid" to confirm your order.');
+      setFormError('Payment incomplete: Please complete payment or retry before confirming this order.');
+      const el = document.getElementById('payment-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     setIsSubmittingOrder(true);
 
     setTimeout(() => {
@@ -260,7 +294,7 @@ export default function CheckoutView() {
             : 'Cash on Delivery (COD)',
         paymentStatus:
           paymentMethod === 'Online'
-            ? (isUpiApproved ? 'Paid' : 'Pending Verification')
+            ? 'Paid'
             : 'Unpaid (Collect on Delivery)',
         upiId: activeUpiId,
         utr: upiUtrInput.trim(),
@@ -456,7 +490,7 @@ export default function CheckoutView() {
           </div>
 
           {/* 3. Upgraded Payment Method & Dynamic Multi-Mode UPI */}
-          <div className="bg-cardcream border border-hairline rounded-crate p-5 shadow-xs space-y-4">
+          <div id="payment-section" className="bg-cardcream border border-hairline rounded-crate p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h2 className="font-serif font-semibold text-lg text-ink">Payment Method</h2>
@@ -545,6 +579,48 @@ export default function CheckoutView() {
             {/* DYNAMIC UPI QR & MULTI-APP CONTAINER */}
             {paymentMethod === 'Online' && (
               <div className="p-4 bg-paper border border-forest/30 rounded-2xl space-y-4 animate-fade-in shadow-xs">
+
+                {/* Payment Failed / Incomplete Alert with Try Again */}
+                {paymentFailed && (
+                  <div className="p-4 bg-kumkum/10 border-2 border-kumkum/40 rounded-2xl space-y-3 animate-fade-in">
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle className="w-5 h-5 text-kumkum shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-xs text-kumkum">Payment Not Verified or Failed</h4>
+                        <p className="text-[11px] text-ink leading-snug">
+                          {paymentErrorMessage || 'Online payment was not completed. Please try again with your UPI app, enter your 12-digit UTR, or switch to Pay on Delivery.'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentFailed(false);
+                          setPaymentErrorMessage('');
+                          setFormError('');
+                          triggerAutoPaymentSuccess();
+                        }}
+                        className="px-3.5 py-2 bg-forest text-paper font-bold text-xs rounded-xl shadow-xs hover:bg-forest-soft flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>🔄 Try Again / Retry Verification</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentMethod('COD');
+                          setPaymentFailed(false);
+                          setPaymentErrorMessage('');
+                          setFormError('');
+                        }}
+                        className="px-3.5 py-2 bg-cardcream hover:bg-paper text-ink font-semibold text-xs rounded-xl border border-hairline transition-colors cursor-pointer"
+                      >
+                        Switch to Cash on Delivery
+                      </button>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Instruction Header */}
                 <div className="p-3 bg-saffron-base/10 border border-saffron-base/30 rounded-xl text-xs text-ink leading-relaxed flex items-start gap-2.5">
@@ -739,6 +815,15 @@ export default function CheckoutView() {
                         <CheckCircle2 className="w-4 h-4 text-saffron-highlight" />
                         <span>⚡ Auto-Verify Payment & Place Order</span>
                       </button>
+                      <div className="flex justify-end pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => triggerAutoPaymentFailure('Bank gateway could not confirm transaction. Please complete your UPI payment and try again, or enter your 12-digit UTR below.')}
+                          className="text-[10px] text-ink-soft/70 hover:text-kumkum underline cursor-pointer transition-colors"
+                        >
+                          Simulate Payment Failure & Retry Flow
+                        </button>
+                      </div>
                     </div>
 
                     {/* Payment Verification & Proof Section */}
@@ -763,7 +848,16 @@ export default function CheckoutView() {
                         <button
                           type="button"
                           onClick={() => {
+                            if (upiUtrInput.trim().length < 6 && !paymentProofImage) {
+                              setPaymentFailed(true);
+                              setPaymentErrorMessage('Please enter your 12-digit Bank Transaction Ref / UTR or attach a screenshot proof to verify payment.');
+                              setFormError('UTR reference or screenshot required to confirm payment.');
+                              return;
+                            }
                             setIsUpiApproved(true);
+                            setPaymentFailed(false);
+                            setPaymentErrorMessage('');
+                            setFormError('');
                             playPaymentChime();
                           }}
                           className={`px-3.5 py-2 font-bold rounded-xl text-xs shadow-xs flex items-center gap-1.5 shrink-0 transition-all ${
@@ -773,7 +867,7 @@ export default function CheckoutView() {
                           }`}
                         >
                           <Check className="w-3.5 h-3.5" />
-                          <span>{isUpiApproved ? 'Payment Recorded' : 'I Have Paid'}</span>
+                          <span>{isUpiApproved ? 'Payment Verified ✓' : 'I Have Paid'}</span>
                         </button>
                       </div>
 
@@ -924,18 +1018,6 @@ export default function CheckoutView() {
                   {couponError && (
                     <p className="text-[10px] text-kumkum font-medium">{couponError}</p>
                   )}
-                  <div className="flex flex-wrap gap-1">
-                    {Object.values(PROMO_COUPONS).map((cp) => (
-                      <button
-                        type="button"
-                        key={cp.code}
-                        onClick={() => applyCoupon(cp.code)}
-                        className="px-2 py-0.5 bg-cardcream hover:bg-forest/10 text-forest border border-forest/20 rounded-md text-[10px] font-mono font-bold"
-                      >
-                        +{cp.code}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               )}
             </div>
@@ -1006,8 +1088,12 @@ export default function CheckoutView() {
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Placing Your Kirana Order... 🛵</span>
                 </>
+              ) : paymentMethod === 'Online' && !isUpiApproved ? (
+                <span>Verify Payment to Place Order • ₹{grandTotal}</span>
+              ) : paymentMethod === 'Online' && isUpiApproved ? (
+                <span>Confirm Order (Paid ₹{grandTotal}) ✓</span>
               ) : (
-                <span>Place order • ₹{grandTotal}</span>
+                <span>Place Order • ₹{grandTotal} ({paymentMethod === 'COD' ? 'Pay on Delivery' : 'Card on Delivery'})</span>
               )}
             </button>
 
@@ -1041,9 +1127,14 @@ export default function CheckoutView() {
                 <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <span>Placing...</span>
               </>
+            ) : paymentMethod === 'Online' && !isUpiApproved ? (
+              <>
+                <span>Verify & Place</span>
+                <Clock className="w-4 h-4" />
+              </>
             ) : (
               <>
-                <span>Place Order</span>
+                <span>Confirm Order</span>
                 <CheckCircle2 className="w-4 h-4" />
               </>
             )}

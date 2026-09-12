@@ -21,7 +21,9 @@ export default function CartDrawer() {
     applyCoupon,
     removeCoupon,
     discountAmount,
-    PROMO_COUPONS,
+    isLoggedIn,
+    setIsLoginOpen,
+    setLoginPromptMessage,
     setActiveView,
     products
   } = useStore();
@@ -29,6 +31,11 @@ export default function CartDrawer() {
   const [couponInput, setCouponInput] = useState('');
 
   const handleCheckoutClick = () => {
+    if (!isLoggedIn) {
+      setLoginPromptMessage('Please sign in with your mobile number to proceed to checkout.');
+      setIsLoginOpen(true);
+      return;
+    }
     setIsCartOpen(false);
     setActiveView('checkout');
   };
@@ -251,7 +258,7 @@ export default function CartDrawer() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="e.g. FIRST50, NISSI10"
+                          placeholder="Enter coupon code"
                           value={couponInput}
                           onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                           className="flex-1 px-3 py-1.5 bg-cardcream rounded-xl text-xs uppercase font-mono font-semibold border border-hairline focus:outline-none focus:border-forest text-ink"
@@ -270,17 +277,6 @@ export default function CartDrawer() {
                       {couponError && (
                         <p className="text-[10px] text-kumkum font-medium">{couponError}</p>
                       )}
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {Object.values(PROMO_COUPONS).map((cp) => (
-                          <button
-                            key={cp.code}
-                            onClick={() => applyCoupon(cp.code)}
-                            className="px-2.5 py-1 bg-cardcream hover:bg-forest/10 text-forest border border-forest/20 rounded-lg text-[10px] font-mono font-bold transition-all hover:scale-105 active:scale-95"
-                          >
-                            🏷️ {cp.code}
-                          </button>
-                        ))}
-                      </div>
                     </div>
                   )}
                 </div>

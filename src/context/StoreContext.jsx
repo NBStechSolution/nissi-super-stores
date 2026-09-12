@@ -28,8 +28,9 @@ export const StoreProvider = ({ children }) => {
 
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(session));
   const [userPhone, setUserPhone] = useState(session?.phone || '');
-  const [userName, setUserName] = useState(session?.name || '');
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [loginPromptMessage, setLoginPromptMessage] = useState('');
+  const [pendingCartAction, setPendingCartAction] = useState(null);
 
   // Strip non-digits and leading country code (91) if 12 digits so phone always normalizes to 10-digit format
   const rawDigits = (userPhone || '').replace(/\D/g, '');
@@ -192,7 +193,14 @@ export const StoreProvider = ({ children }) => {
   };
 
   const addToCart = (product, qty = 1) => {
-    if (product.stock <= 0) return;
+    if (!isLoggedIn) {
+      setLoginPromptMessage('Please sign in with your mobile number to add items to your cart and place orders.');
+      setPendingCartAction({ product, qty });
+      setIsLoginOpen(true);
+      return false;
+    }
+
+    if (product.stock <= 0) return false;
 
     setCart((prevCart) => {
       const existing = prevCart.find((item) => item.id === product.id);
@@ -205,9 +213,16 @@ export const StoreProvider = ({ children }) => {
       return [...prevCart, { ...product, quantity: Math.min(qty, product.stock) }];
     });
     setIsCartOpen(true);
+    return true;
   };
 
   const updateCartQuantity = (productId, delta) => {
+    if (!isLoggedIn) {
+      setLoginPromptMessage('Please sign in to update your cart.');
+      setIsLoginOpen(true);
+      return;
+    }
+
     const product = products.find((p) => p.id === productId);
     if (!product) return;
 
@@ -242,6 +257,7 @@ export const StoreProvider = ({ children }) => {
     setUserName(cleanN);
     setIsLoggedIn(true);
     setIsLoginOpen(false);
+    setLoginPromptMessage('');
 
     try {
       localStorage.setItem('nissi_user_session', JSON.stringify({
@@ -250,6 +266,23 @@ export const StoreProvider = ({ children }) => {
       }));
     } catch (e) {
       console.warn('Failed to persist user session:', e);
+    }
+
+    // Automatically fulfill pending item addition right after sign-in
+    if (pendingCartAction?.product) {
+      const { product, qty } = pendingCartAction;
+      setCart((prevCart) => {
+        const existing = prevCart.find((item) => item.id === product.id);
+        if (existing) {
+          const newQty = Math.min(existing.quantity + (qty || 1), product.stock);
+          return prevCart.map((item) =>
+            item.id === product.id ? { ...item, quantity: newQty } : item
+          );
+        }
+        return [...prevCart, { ...product, quantity: Math.min(qty || 1, product.stock) }];
+      });
+      setPendingCartAction(null);
+      setIsCartOpen(true);
     }
   };
 
@@ -260,6 +293,9 @@ export const StoreProvider = ({ children }) => {
     setIsLoggedIn(false);
     setUserPhone('');
     setUserName('');
+    setPendingCartAction(null);
+    setLoginPromptMessage('');
+    clearCart();
     try {
       localStorage.removeItem('nissi_user_session');
     } catch (e) {
@@ -622,6 +658,8 @@ export const StoreProvider = ({ children }) => {
         isAdminOrStaff,
         isLoginOpen,
         setIsLoginOpen,
+        loginPromptMessage,
+        setLoginPromptMessage,
         loginDirect,
         loginWithOtp,
         logout,
