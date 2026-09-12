@@ -19,7 +19,6 @@ export default function DeliveryStaffView() {
   const {
     orders,
     updateOrderStatus,
-    updateOrderPaymentStatus,
     verifyAndDeliverOrder,
     setActiveView,
     isAdminOrStaff,
@@ -29,12 +28,42 @@ export default function DeliveryStaffView() {
   const [printSlipOrder, setPrintSlipOrder] = useState(null);
   const [riderQrOrder, setRiderQrOrder] = useState(null);
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [qrViewMode, setQrViewMode] = useState('dynamic'); // 'dynamic' | 'merchant'
 
   const activeDeliveries = orders.filter((o) => o.status !== 'Delivered' && o.status !== 'Cancelled');
   const completedDeliveries = orders.filter((o) => o.status === 'Delivered');
 
-  const handleDirectDeliver = (orderId) => {
-    verifyAndDeliverOrder(orderId);
+  const playDeliveryChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now); // C5
+      osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+      osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+      osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.55);
+    } catch {
+      // Audio autoplay policy fallback
+    }
+  };
+
+  const handleDirectDeliver = (orderId, method = 'Doorstep UPI') => {
+    verifyAndDeliverOrder(orderId, method);
+    playDeliveryChime();
   };
 
   return (
@@ -44,7 +73,7 @@ export default function DeliveryStaffView() {
       <div className="flex items-center justify-between gap-3 bg-paper p-3 rounded-2xl border border-hairline shadow-xs">
         <button
           onClick={() => setActiveView('home')}
-          className="flex items-center gap-2 px-3.5 py-2 bg-forest hover:bg-forest/90 text-paper font-bold text-xs rounded-xl shadow-xs transition-all"
+          className="flex items-center gap-2 px-3.5 py-2 bg-forest hover:bg-forest/90 text-paper font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
           <span>Back to Customer Storefront</span>
@@ -53,7 +82,7 @@ export default function DeliveryStaffView() {
         {isAdminOrStaff && (
           <button
             onClick={() => setActiveView('admin')}
-            className="flex items-center gap-1.5 px-3 py-2 bg-cardcream hover:bg-hairline/60 text-ink font-semibold text-xs rounded-xl border border-hairline transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-cardcream hover:bg-hairline/60 text-ink font-semibold text-xs rounded-xl border border-hairline transition-colors cursor-pointer"
           >
             <Store className="w-3.5 h-3.5 text-forest" />
             <span>Switch to Admin Center</span>
@@ -83,7 +112,7 @@ export default function DeliveryStaffView() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('active')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'active'
                 ? 'bg-forest text-paper shadow-xs'
                 : 'bg-paper text-ink-soft border border-hairline'
@@ -93,7 +122,7 @@ export default function DeliveryStaffView() {
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'history'
                 ? 'bg-forest text-paper shadow-xs'
                 : 'bg-paper text-ink-soft border border-hairline'
@@ -134,7 +163,7 @@ export default function DeliveryStaffView() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setPrintSlipOrder(ord)}
-                      className="p-1.5 bg-paper hover:bg-cardcream border border-hairline rounded-lg text-ink-soft hover:text-ink transition-colors"
+                      className="p-1.5 bg-paper hover:bg-cardcream border border-hairline rounded-lg text-ink-soft hover:text-ink transition-colors cursor-pointer"
                       title="Print Packing Slip"
                     >
                       <Printer className="w-3.5 h-3.5 text-forest" />
@@ -195,37 +224,26 @@ export default function DeliveryStaffView() {
                   <div className="space-y-0.5">
                     {ord.paymentStatus === 'Paid' ? (
                       <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 bg-forest text-paper font-bold text-[10px] rounded-full flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> PRE-PAID ONLINE
+                        <span className="px-2.5 py-1 bg-forest text-paper font-bold text-[10px] rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-saffron-highlight" /> PAID AT DOORSTEP
                         </span>
-                        <span className="text-[11px] font-bold text-forest">₹{ord.totalAmount} • DO NOT COLLECT</span>
-                      </div>
-                    ) : ord.paymentStatus === 'Pending Verification' ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 bg-saffron-base/30 text-ink font-bold text-[10px] rounded-full border border-saffron-base">
-                          UPI PENDING
-                        </span>
-                        <span className="text-[11px] font-bold text-ink">Verify (₹{ord.totalAmount})</span>
-                        <button
-                          type="button"
-                          onClick={() => setRiderQrOrder(ord)}
-                          className="text-[10px] text-forest underline font-bold ml-1"
-                        >
-                          Show QR
-                        </button>
+                        <span className="text-[11px] font-bold text-forest">₹{ord.totalAmount} ✓</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-mono font-bold text-kumkum text-sm">
-                          Collect: ₹{ord.totalAmount} ({ord.paymentMethod || 'COD'})
+                          Collect: ₹{ord.totalAmount}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-paper border border-hairline font-semibold text-ink-soft">
+                          {ord.paymentMethod || 'Doorstep UPI'}
                         </span>
                         <button
                           type="button"
                           onClick={() => setRiderQrOrder(ord)}
-                          className="px-2 py-1 bg-cardcream hover:bg-forest/10 text-forest rounded-lg border border-forest/30 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                          className="px-2.5 py-1 bg-saffron-gradient hover:brightness-105 text-ink rounded-lg font-bold text-[10px] flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-95"
                         >
-                          <QrCode className="w-3 h-3" />
-                          <span>Show QR at Door</span>
+                          <QrCode className="w-3 h-3 text-forest" />
+                          <span>Show Scanner</span>
                         </button>
                       </div>
                     )}
@@ -235,7 +253,7 @@ export default function DeliveryStaffView() {
                     {ord.status === 'Placed' && (
                       <button
                         onClick={() => updateOrderStatus(ord.id, 'Confirmed')}
-                        className="px-3.5 py-2 bg-forest text-paper font-bold rounded-xl hover:bg-forest-soft transition-all"
+                        className="px-3.5 py-2 bg-forest text-paper font-bold rounded-xl hover:bg-forest-soft transition-all cursor-pointer"
                       >
                         Accept Order
                       </button>
@@ -243,7 +261,7 @@ export default function DeliveryStaffView() {
                     {ord.status === 'Confirmed' && (
                       <button
                         onClick={() => updateOrderStatus(ord.id, 'Preparing')}
-                        className="px-3.5 py-2 bg-saffron-gradient text-ink font-bold rounded-xl transition-all"
+                        className="px-3.5 py-2 bg-saffron-gradient text-ink font-bold rounded-xl transition-all cursor-pointer"
                       >
                         Start Packing
                       </button>
@@ -251,7 +269,7 @@ export default function DeliveryStaffView() {
                     {ord.status === 'Preparing' && (
                       <button
                         onClick={() => updateOrderStatus(ord.id, 'Packed')}
-                        className="px-3.5 py-2 bg-saffron-gradient text-ink font-bold rounded-xl transition-all"
+                        className="px-3.5 py-2 bg-saffron-gradient text-ink font-bold rounded-xl transition-all cursor-pointer"
                       >
                         Mark Packed
                       </button>
@@ -259,19 +277,28 @@ export default function DeliveryStaffView() {
                     {ord.status === 'Packed' && (
                       <button
                         onClick={() => updateOrderStatus(ord.id, 'Out for Delivery')}
-                        className="px-3.5 py-2 bg-forest text-paper font-bold rounded-xl hover:bg-forest-soft transition-all flex items-center gap-1"
+                        className="px-3.5 py-2 bg-forest text-paper font-bold rounded-xl hover:bg-forest-soft transition-all flex items-center gap-1 cursor-pointer"
                       >
                         <Truck className="w-4 h-4" /> Picked Up & Out for Delivery
                       </button>
                     )}
                     {ord.status === 'Out for Delivery' && (
-                      <button
-                        onClick={() => handleDirectDeliver(ord.id)}
-                        className="px-4 py-2 bg-forest text-paper font-bold rounded-xl shadow-md hover:bg-forest-soft transition-all flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-4 h-4 text-saffron-highlight" />
-                        <span>Confirm Handover & Deliver</span>
-                      </button>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => setRiderQrOrder(ord)}
+                          className="px-3.5 py-2 bg-saffron-gradient text-ink font-bold rounded-xl shadow-xs hover:brightness-105 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                        >
+                          <QrCode className="w-4 h-4 text-forest" />
+                          <span>📱 Show Store Scanner (₹{ord.totalAmount})</span>
+                        </button>
+                        <button
+                          onClick={() => handleDirectDeliver(ord.id, 'Cash on Delivery')}
+                          className="px-3.5 py-2 bg-paper hover:bg-cardcream text-ink font-bold rounded-xl border border-hairline transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-forest" />
+                          <span>Cash Received</span>
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -292,7 +319,7 @@ export default function DeliveryStaffView() {
               </div>
               <div className="text-right">
                 <span className="font-mono font-bold text-forest text-sm">₹{ord.totalAmount}</span>
-                <span className="text-forest font-bold block text-[11px]">✓ Handover Verified</span>
+                <span className="text-forest font-bold block text-[11px]">✓ Handover & Payment Verified</span>
               </div>
             </div>
           ))}
@@ -345,13 +372,13 @@ export default function DeliveryStaffView() {
             <div className="flex justify-end gap-2 pt-3 border-t border-gray-300 print:hidden font-sans">
               <button
                 onClick={() => setPrintSlipOrder(null)}
-                className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-black rounded-lg text-xs font-semibold"
+                className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-black rounded-lg text-xs font-semibold cursor-pointer"
               >
                 Close
               </button>
               <button
                 onClick={() => window.print()}
-                className="px-4 py-1.5 bg-black text-white hover:bg-gray-800 rounded-lg text-xs font-bold flex items-center gap-1.5"
+                className="px-4 py-1.5 bg-black text-white hover:bg-gray-800 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5" />
                 <span>Print Slip</span>
@@ -361,40 +388,77 @@ export default function DeliveryStaffView() {
         </div>
       )}
 
-      {/* RIDER DOORSTEP QR MODAL */}
+      {/* RIDER DOORSTEP QR SCANNER MODAL */}
       {riderQrOrder && (
-        <div className="fixed inset-0 z-50 bg-ink/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl relative border border-hairline animate-scale-up">
             <button
               type="button"
               onClick={() => setRiderQrOrder(null)}
-              className="absolute right-4 top-4 w-8 h-8 rounded-full bg-cardcream hover:bg-paper text-ink flex items-center justify-center border border-hairline transition-colors"
+              className="absolute right-4 top-4 w-8 h-8 rounded-full bg-cardcream hover:bg-paper text-ink flex items-center justify-center border border-hairline transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
 
             <div>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-forest/10 text-forest border border-forest/20">
-                Doorstep Kirana Payment
+                Doorstep Store QR Scanner
               </span>
-              <h3 className="font-serif font-bold text-lg text-ink mt-1">
-                Scan to Pay ₹{riderQrOrder.totalAmount}
+              <h3 className="font-serif font-bold text-2xl text-ink mt-1">
+                Collect ₹{riderQrOrder.totalAmount}
               </h3>
-              <p className="text-xs text-ink-soft">Customer: {riderQrOrder.customerName} • Order #{riderQrOrder.id}</p>
+              <p className="text-xs text-ink-soft">
+                Customer: <strong className="text-ink">{riderQrOrder.customerName}</strong> • #{riderQrOrder.id}
+              </p>
             </div>
 
-            <div className="p-3 bg-cardcream/50 rounded-2xl border border-hairline flex items-center justify-center">
+            {/* QR View Mode Toggle */}
+            <div className="flex items-center justify-between bg-cardcream p-1 rounded-xl border border-hairline text-xs">
+              <button
+                type="button"
+                onClick={() => setQrViewMode('dynamic')}
+                className={`flex-1 py-1.5 px-2 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+                  qrViewMode === 'dynamic'
+                    ? 'bg-forest text-paper shadow-2xs'
+                    : 'text-ink-soft hover:text-ink'
+                }`}
+              >
+                Dynamic QR (₹{riderQrOrder.totalAmount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setQrViewMode('merchant')}
+                className={`flex-1 py-1.5 px-2 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+                  qrViewMode === 'merchant'
+                    ? 'bg-forest text-paper shadow-2xs'
+                    : 'text-ink-soft hover:text-ink'
+                }`}
+              >
+                Official Standee QR
+              </button>
+            </div>
+
+            {/* High-Contrast QR Code for Outdoor/Doorstep Scanning */}
+            <div className="p-3 bg-white rounded-2xl border-2 border-forest/20 flex flex-col items-center justify-center shadow-inner">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&data=${encodeURIComponent(
-                  PAYMENT_CONFIG?.generateUpiUri
-                    ? PAYMENT_CONFIG.generateUpiUri(riderQrOrder.totalAmount, riderQrOrder.id)
-                    : `upi://pay?pa=abicharan07@axl&pn=Nissi%20Super%20Stores&am=${riderQrOrder.totalAmount}&cu=INR&tn=Order%20${riderQrOrder.id}`
-                )}`}
-                alt="Doorstep QR Code"
-                className="w-64 h-64 object-contain rounded-xl shadow-xs"
+                src={
+                  qrViewMode === 'dynamic'
+                    ? `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=${encodeURIComponent(
+                        PAYMENT_CONFIG?.generateUpiUri
+                          ? PAYMENT_CONFIG.generateUpiUri(riderQrOrder.totalAmount, riderQrOrder.id)
+                          : `upi://pay?pa=${PAYMENT_CONFIG?.upiId || 'abicharan07@axl'}&pn=Nissi%20Super%20Stores&am=${riderQrOrder.totalAmount}&cu=INR&tn=Order%20${riderQrOrder.id}`
+                      )}`
+                    : PAYMENT_CONFIG?.qrCodeUrl || '/payment-qr.jpeg'
+                }
+                alt="Store Payment QR Code"
+                className="w-64 h-64 object-contain rounded-xl"
               />
+              <span className="text-[10px] text-ink-soft mt-1.5 font-semibold">
+                Customer scans with PhonePe, GPay, Paytm or BHIM
+              </span>
             </div>
 
+            {/* Merchant Details & Quick Actions */}
             <div className="space-y-2">
               <div className="flex items-center justify-between px-3 py-2 font-mono text-xs font-bold text-forest bg-forest/5 rounded-xl border border-forest/20">
                 <span className="truncate">{PAYMENT_CONFIG?.upiId || 'abicharan07@axl'}</span>
@@ -405,27 +469,40 @@ export default function DeliveryStaffView() {
                     setCopiedUpi(true);
                     setTimeout(() => setCopiedUpi(false), 2000);
                   }}
-                  className="px-2.5 py-1 bg-white rounded-lg border border-hairline text-[10px] font-sans font-bold text-ink hover:text-forest transition-colors shrink-0 ml-2"
+                  className="px-2.5 py-1 bg-white rounded-lg border border-hairline text-[10px] font-sans font-bold text-ink hover:text-forest transition-colors shrink-0 ml-2 cursor-pointer"
                 >
-                  {copiedUpi ? 'Copied!' : 'Copy'}
+                  {copiedUpi ? 'Copied!' : 'Copy UPI'}
                 </button>
               </div>
 
+              {/* 1-Tap UPI Received */}
               <button
                 type="button"
                 onClick={() => {
-                  updateOrderPaymentStatus(riderQrOrder.id, 'Paid', 'Doorstep UPI');
+                  handleDirectDeliver(riderQrOrder.id, 'Doorstep UPI');
                   setRiderQrOrder(null);
                 }}
-                className="w-full py-2.5 bg-forest text-paper font-bold text-xs rounded-xl shadow-xs hover:bg-forest-soft transition-all"
+                className="w-full py-3 bg-forest text-paper font-bold text-xs rounded-xl shadow-md hover:bg-forest-soft transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
               >
-                ✓ Confirm Payment Received at Doorstep
+                <CheckCircle2 className="w-4 h-4 text-saffron-highlight" />
+                <span>✓ UPI Payment Received (₹{riderQrOrder.totalAmount}) & Deliver</span>
+              </button>
+
+              {/* 1-Tap Cash Received */}
+              <button
+                type="button"
+                onClick={() => {
+                  handleDirectDeliver(riderQrOrder.id, 'Cash on Delivery');
+                  setRiderQrOrder(null);
+                }}
+                className="w-full py-2 bg-cardcream hover:bg-hairline/60 text-ink font-bold text-xs rounded-xl border border-hairline transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>💵 Cash Collected (₹{riderQrOrder.totalAmount}) & Deliver</span>
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

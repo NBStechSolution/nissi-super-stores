@@ -613,15 +613,30 @@ export const StoreProvider = ({ children }) => {
     }
   };
 
-  const verifyAndDeliverOrder = (orderId) => {
+  const verifyAndDeliverOrder = (orderId, paymentMethodCollected = 'Doorstep UPI') => {
     const order = orders.find((o) => o.id === orderId);
     if (!order) return { success: false, message: 'Order not found.' };
     if (order.status === 'Delivered') return { success: true, message: 'Order already delivered.' };
 
+    const doorstepRef = `DOORSTEP-${Date.now().toString().slice(-6)}`;
+
     setOrders((prev) =>
-      prev.map((ord) => (ord.id === orderId ? { ...ord, status: 'Delivered', deliveredAt: 'Just now' } : ord))
+      prev.map((ord) => (ord.id === orderId ? {
+        ...ord,
+        status: 'Delivered',
+        paymentStatus: 'Paid',
+        paymentMethod: ord.paymentMethod || paymentMethodCollected,
+        utr: ord.utr || doorstepRef,
+        deliveredAt: 'Just now',
+        paidAt: ord.paidAt || 'Just now'
+      } : ord))
     );
-    return { success: true, message: 'Order successfully marked as delivered!' };
+
+    // Sync delivery status & payment to Supabase
+    updateOrderStatusInSupabase(orderId, 'Delivered');
+    updateOrderPaymentInSupabase(orderId, 'Paid', doorstepRef);
+
+    return { success: true, message: 'Order successfully marked as delivered and payment collected!' };
   };
 
   const createOrder = (orderData) => {
@@ -641,12 +656,12 @@ export const StoreProvider = ({ children }) => {
       placedAt: 'Just now',
       deliveryWindow: orderData.deliveryType === 'Emergency' ? 'Within 15 Mins' : '2:15 PM – 5:15 PM',
       isEmergency: orderData.deliveryType === 'Emergency',
-      paymentMethod: orderData.paymentMethod || 'COD',
-      paymentStatus: orderData.paymentStatus || (orderData.paymentMethod?.includes('Online') || orderData.paymentMethod?.includes('UPI') ? (orderData.isUpiApproved ? 'Paid' : 'Pending Verification') : 'Unpaid'),
+      paymentMethod: orderData.paymentMethod || 'Doorstep UPI Scanner',
+      paymentStatus: orderData.paymentStatus || 'Unpaid (Collect at Doorstep)',
       upiId: orderData.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl',
       utr: orderData.utr || '',
       paymentProof: orderData.paymentProof || null,
-      paidAt: orderData.paymentStatus === 'Paid' || orderData.isUpiApproved ? 'Just now' : null,
+      paidAt: null,
       assignedRider: 'Raju M. (+91 91234 56789)'
     };
 

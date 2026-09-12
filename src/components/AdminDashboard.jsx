@@ -640,18 +640,14 @@ export default function AdminDashboard() {
                               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-forest bg-forest/10 px-2 py-0.5 rounded-full">
                                 ✓ Paid
                               </span>
-                            ) : ord.paymentStatus === 'Pending Verification' ? (
+                            ) : (
                               <button
                                 onClick={() => updateOrderPaymentStatus(ord.id, 'Paid')}
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-ink bg-saffron-base/30 px-2 py-0.5 rounded-full hover:bg-saffron-base/50 transition-colors cursor-pointer"
-                                title="Click to verify & approve payment"
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-ink bg-saffron-base/30 hover:bg-saffron-base/50 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+                                title="Click to mark payment as collected"
                               >
-                                <span>Verify Pay</span>
+                                <span>{ord.paymentStatus?.includes('Unpaid') ? 'Mark Paid' : ord.paymentStatus || 'Mark Paid'}</span>
                               </button>
-                            ) : (
-                              <span className="text-[10px] font-semibold text-ink-soft bg-paper px-1.5 py-0.5 rounded border border-hairline">
-                                COD
-                              </span>
                             )}
                             {ord.utr && <span className="block font-mono text-[9px] text-ink-soft truncate">Ref: {ord.utr}</span>}
                           </div>

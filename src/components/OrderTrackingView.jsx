@@ -12,10 +12,8 @@ import {
   CheckCircle2,
   QrCode,
   X,
-  Loader2,
   MessageSquare
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { useStore } from '../context/StoreContext';
 
 const TIMELINE_STEPS = [
@@ -31,7 +29,6 @@ export default function OrderTrackingView() {
   const {
     activeOrder,
     updateOrderStatus,
-    updateOrderPaymentStatus,
     orders,
     setActiveOrderId,
     addToCart,
@@ -43,54 +40,6 @@ export default function OrderTrackingView() {
   const [isPayQrOpen, setIsPayQrOpen] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [qrMode, setQrMode] = useState('dynamic'); // 'dynamic' | 'merchant'
-  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
-
-  const playPaymentChime = () => {
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, now); // D5
-      osc.frequency.setValueAtTime(880, now + 0.12); // A5
-
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.5);
-    } catch (e) {
-      console.warn('AudioContext playback error:', e);
-    }
-  };
-
-  const handleAutoVerifyExistingOrder = () => {
-    if (!activeOrder) return;
-    setIsVerifyingPayment(true);
-    setTimeout(() => {
-      const generatedUtr = activeOrder.utr || `AXL${Date.now().toString().slice(-8)}`;
-      updateOrderPaymentStatus(activeOrder.id, 'Paid', generatedUtr);
-      playPaymentChime();
-      try {
-        confetti({
-          particleCount: 90,
-          spread: 75,
-          origin: { y: 0.6 }
-        });
-      } catch (e) {
-        console.warn('Confetti error:', e);
-      }
-      setIsVerifyingPayment(false);
-      setIsPayQrOpen(false);
-    }, 1200);
-  };
 
   const currentStatus = activeOrder ? activeOrder.status : 'Placed';
   const isCancelled = currentStatus === 'Cancelled';
@@ -375,83 +324,67 @@ export default function OrderTrackingView() {
               <div className="flex items-center gap-2">
                 <h3 className="font-serif font-bold text-sm text-ink">Payment Information</h3>
                 {activeOrder.paymentStatus === 'Paid' ? (
-                  <span className="px-2 py-0.5 bg-forest text-paper text-[10px] font-bold rounded-full flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Paid Online
-                  </span>
-                ) : activeOrder.paymentStatus === 'Pending Verification' ? (
-                  <span className="px-2 py-0.5 bg-saffron-base/30 text-ink text-[10px] font-bold rounded-full border border-saffron-base">
-                    Verification Pending
+                  <span className="px-2.5 py-0.5 bg-forest text-paper text-[10px] font-bold rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-saffron-highlight" /> Paid at Doorstep
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 bg-paper text-ink-soft text-[10px] font-bold rounded-full border border-hairline">
+                  <span className="px-2.5 py-0.5 bg-forest/10 text-forest text-[10px] font-bold rounded-full border border-forest/20">
                     Pay on Delivery
                   </span>
                 )}
               </div>
               <p className="text-xs text-ink-soft mt-0.5">
-                Mode: <strong className="text-ink">{activeOrder.paymentMethod || 'COD'}</strong> • Total: <strong className="text-forest font-mono">₹{activeOrder.totalAmount}</strong>
+                Mode: <strong className="text-ink">{activeOrder.paymentMethod || 'Doorstep UPI'}</strong> • Total: <strong className="text-forest font-mono">₹{activeOrder.totalAmount}</strong>
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {activeOrder.paymentStatus !== 'Paid' && (
-              <button
-                type="button"
-                onClick={handleAutoVerifyExistingOrder}
-                disabled={isVerifyingPayment}
-                className="px-3 py-1.5 bg-forest hover:bg-forest/90 text-paper font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-transform active:scale-95 disabled:opacity-50"
-              >
-                {isVerifyingPayment ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Zap className="w-3.5 h-3.5 text-saffron-base" />
-                )}
-                <span>{isVerifyingPayment ? 'Verifying...' : '⚡ Auto-Verify Payment'}</span>
-              </button>
-            )}
             <button
               onClick={() => setIsPayQrOpen(true)}
-              className="px-3 py-1.5 bg-paper hover:bg-cardcream text-forest font-bold text-xs rounded-xl border border-forest/30 flex items-center gap-1.5 transition-colors shadow-2xs"
+              className="px-3 py-1.5 bg-paper hover:bg-cardcream text-forest font-bold text-xs rounded-xl border border-forest/30 flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
             >
               <QrCode className="w-3.5 h-3.5" />
-              <span>{activeOrder.paymentStatus === 'Paid' ? 'View QR Receipt' : 'Pay Online via QR'}</span>
+              <span>{activeOrder.paymentStatus === 'Paid' ? 'View Payment Receipt' : 'Preview Store QR'}</span>
             </button>
           </div>
         </div>
 
-        {/* Payment Sub-details */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="p-2.5 bg-paper rounded-xl border border-hairline">
-            <span className="text-[10px] text-ink-soft block font-medium">BENEFICIARY UPI ID</span>
-            <span className="font-mono font-bold text-forest text-xs">{activeOrder.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl'}</span>
+        {/* Payment Sub-details / Guidance */}
+        {activeOrder.paymentStatus !== 'Paid' ? (
+          <div className="p-3 bg-forest/5 border border-forest/20 rounded-xl text-xs space-y-1">
+            <p className="font-bold text-forest flex items-center gap-1.5">
+              <QrCode className="w-3.5 h-3.5" />
+              <span>Doorstep Payment Collection (₹{activeOrder.totalAmount})</span>
+            </p>
+            <p className="text-[11px] text-ink-soft leading-relaxed">
+              No advance payment needed. Please keep your UPI app (PhonePe, Google Pay, Paytm, BHIM) or cash ready. Your delivery partner will present the official store scanner on their phone upon arrival at your doorstep.
+            </p>
           </div>
-
-          <div className="p-2.5 bg-paper rounded-xl border border-hairline">
-            <span className="text-[10px] text-ink-soft block font-medium">TRANSACTION UTR / REF</span>
-            <span className="font-mono font-bold text-ink text-xs">
-              {activeOrder.utr ? activeOrder.utr : activeOrder.paymentStatus === 'Paid' ? 'Confirmed by Customer' : 'Pay at Doorstep'}
-            </span>
-          </div>
-
-          <div className="p-2.5 bg-paper rounded-xl border border-hairline flex items-center justify-between">
-            <div>
-              <span className="text-[10px] text-ink-soft block font-medium">RECEIPT PROOF</span>
-              <span className="text-xs font-semibold text-ink">
-                {activeOrder.paymentProof ? 'Attached ✓' : 'Direct Digital'}
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="p-2.5 bg-paper rounded-xl border border-hairline">
+              <span className="text-[10px] text-ink-soft block font-medium">PAYMENT STATUS</span>
+              <span className="font-bold text-forest text-xs flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-forest" /> Paid & Verified
               </span>
             </div>
-            {activeOrder.paymentProof && (
-              <img
-                src={activeOrder.paymentProof}
-                alt="Receipt Proof"
-                className="w-8 h-8 rounded-lg object-cover border border-hairline cursor-pointer"
-                onClick={() => setIsPayQrOpen(true)}
-                title="Click to view"
-              />
-            )}
+
+            <div className="p-2.5 bg-paper rounded-xl border border-hairline">
+              <span className="text-[10px] text-ink-soft block font-medium">TRANSACTION REF / UTR</span>
+              <span className="font-mono font-bold text-ink text-xs">
+                {activeOrder.utr || 'COLLECTED-AT-DOORSTEP'}
+              </span>
+            </div>
+
+            <div className="p-2.5 bg-paper rounded-xl border border-hairline">
+              <span className="text-[10px] text-ink-soft block font-medium">BENEFICIARY UPI ID</span>
+              <span className="font-mono font-bold text-forest text-xs">
+                {activeOrder.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl'}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Delivery Handover Status Banner (No OTP) */}
@@ -679,24 +612,14 @@ export default function OrderTrackingView() {
               </div>
 
               {activeOrder.paymentStatus !== 'Paid' && (
-                <button
-                  type="button"
-                  onClick={handleAutoVerifyExistingOrder}
-                  disabled={isVerifyingPayment}
-                  className="w-full py-2.5 bg-saffron-gradient text-ink font-bold text-xs rounded-xl shadow-xs hover:brightness-105 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  {isVerifyingPayment ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-forest" />
-                      <span>Verifying Axis Bank / UPI Payment...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-4 h-4 text-forest" />
-                      <span>⚡ Auto-Verify & Sync Payment</span>
-                    </>
-                  )}
-                </button>
+                <div className="p-3 bg-cardcream rounded-2xl border border-hairline text-center space-y-1">
+                  <p className="text-xs font-bold text-ink">
+                    🛵 Pay at Doorstep
+                  </p>
+                  <p className="text-[11px] text-ink-soft leading-relaxed">
+                    Our delivery rider will present the official store scanner on their phone upon arrival to collect <strong className="text-forest font-mono">₹{activeOrder.totalAmount}</strong>.
+                  </p>
+                </div>
               )}
             </div>
           </div>
