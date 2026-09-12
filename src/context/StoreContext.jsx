@@ -3,6 +3,8 @@ import { INITIAL_PRODUCTS, INITIAL_ORDERS, TELUGU_TRANSLATIONS } from '../data/m
 import { ADMIN_PHONE, ADMIN_NAME, PAYMENT_CONFIG } from '../data/paymentConfig';
 import {
   fetchProductsFromSupabase,
+  saveProductToSupabase,
+  deleteProductFromSupabase,
   fetchOrdersFromSupabase,
   saveOrderToSupabase,
   updateOrderStatusInSupabase,
@@ -39,11 +41,36 @@ export const StoreProvider = ({ children }) => {
     ? rawDigits.slice(2)
     : rawDigits;
   const cleanName = (userName || '').trim().toLowerCase();
+
+  // Store Manager Mode: allows owner/staff to delete/add/edit items directly on the storefront
+  const [isManagerMode, setIsManagerMode] = useState(() => {
+    try {
+      return localStorage.getItem('nissi_manager_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleManagerMode = (overrideVal) => {
+    setIsManagerMode((prev) => {
+      const nextVal = typeof overrideVal === 'boolean' ? overrideVal : !prev;
+      try {
+        localStorage.setItem('nissi_manager_mode', String(nextVal));
+      } catch (e) {
+        console.warn('Failed to save manager mode to localStorage:', e);
+      }
+      return nextVal;
+    });
+  };
+
   const isAdminOrStaff = Boolean(
-    isLoggedIn &&
-    cleanPhone === ADMIN_PHONE &&
-    cleanName === ADMIN_NAME
+    isManagerMode ||
+    (isLoggedIn && cleanPhone === ADMIN_PHONE) ||
+    (isLoggedIn && cleanPhone === ADMIN_PHONE && cleanName === ADMIN_NAME)
   );
+
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
 
   const [savedAddresses, setSavedAddresses] = useState([
     { id: 1, tag: 'Home', address: 'Flat 402, Sai Residency, Jubilee Hills Road No. 36, Hyderabad - 500033' },
@@ -443,6 +470,11 @@ export const StoreProvider = ({ children }) => {
       return updated;
     });
 
+    // Asynchronously sync to Supabase database
+    saveProductToSupabase(newProduct).catch((err) =>
+      console.warn('Could not sync new product to Supabase:', err)
+    );
+
     return newProduct;
   };
 
@@ -460,7 +492,9 @@ export const StoreProvider = ({ children }) => {
       const updated = prev.map((p) => {
         if (p.id === productId) {
           const stockVal = Math.max(0, parseInt(newStock) || 0);
-          return { ...p, stock: stockVal };
+          const updatedProd = { ...p, stock: stockVal };
+          saveProductToSupabase(updatedProd).catch(() => {});
+          return updatedProd;
         }
         return p;
       });
@@ -477,7 +511,7 @@ export const StoreProvider = ({ children }) => {
     setProducts((prev) => {
       const updated = prev.map((p) => {
         if (p.id === productId) {
-          return {
+          const updatedProd = {
             ...p,
             ...updatedData,
             price: Math.max(0, Number(updatedData.price) || p.price),
@@ -485,6 +519,8 @@ export const StoreProvider = ({ children }) => {
             stock: Math.max(0, parseInt(updatedData.stock) ?? p.stock),
             lowStockThreshold: Math.max(1, parseInt(updatedData.lowStockThreshold) ?? p.lowStockThreshold)
           };
+          saveProductToSupabase(updatedProd).catch(() => {});
+          return updatedProd;
         }
         return p;
       });
@@ -508,6 +544,9 @@ export const StoreProvider = ({ children }) => {
       return updated;
     });
     setCart((prev) => prev.filter((i) => i.id !== productId));
+    deleteProductFromSupabase(productId).catch((err) =>
+      console.warn('Could not delete product from Supabase:', err)
+    );
   };
 
   const duplicateProduct = (productId) => {
@@ -854,7 +893,13 @@ export const StoreProvider = ({ children }) => {
         openSubscriptionModal,
         addSubscription,
         toggleSubscriptionStatus,
-        cancelSubscription
+        cancelSubscription,
+        isManagerMode,
+        toggleManagerMode,
+        isQuickAddOpen,
+        setIsQuickAddOpen,
+        productToDelete,
+        setProductToDelete
       }}
     >
       {children}
@@ -878,7 +923,13 @@ export const useStore = () => {
       openSubscriptionModal: () => {},
       addSubscription: () => {},
       toggleSubscriptionStatus: () => {},
-      cancelSubscription: () => {}
+      cancelSubscription: () => {},
+      isManagerMode: false,
+      toggleManagerMode: () => {},
+      isQuickAddOpen: false,
+      setIsQuickAddOpen: () => {},
+      productToDelete: null,
+      setProductToDelete: () => {}
     };
   }
   return context;

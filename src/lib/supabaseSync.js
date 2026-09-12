@@ -40,6 +40,64 @@ export async function fetchProductsFromSupabase() {
 }
 
 /**
+ * Save or update product in Supabase 'products' table
+ */
+export async function saveProductToSupabase(product) {
+  if (!isSupabaseConfigured || !supabase || !product) return false;
+  try {
+    const row = {
+      id: String(product.id),
+      name: product.name || 'New Product',
+      name_te: product.nameTe || '',
+      category: product.category || 'grocery',
+      price: Number(product.price) || 0,
+      mrp: Number(product.mrp || product.price) || 0,
+      unit: product.unit || '1 Unit',
+      stock: Number(product.stock) || 0,
+      low_stock_threshold: Number(product.lowStockThreshold) || 5,
+      badge: product.badge || '',
+      description: product.description || '',
+      image_2d: product.image2D || '',
+      fallback_emoji: product.fallbackEmoji || '🛒',
+      image_bg: product.imageBg || '#F5F5F0',
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase.from('products').upsert(row);
+    if (error) {
+      console.warn('Supabase product save warning:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Supabase product save error:', err);
+    return false;
+  }
+}
+
+/**
+ * Delete product from Supabase 'products' table
+ */
+export async function deleteProductFromSupabase(productId) {
+  if (!isSupabaseConfigured || !supabase || !productId) return false;
+  try {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', String(productId));
+
+    if (error) {
+      console.warn('Supabase product delete warning:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Supabase product delete error:', err);
+    return false;
+  }
+}
+
+/**
  * Fetch all orders from Supabase 'orders' table
  */
 export async function fetchOrdersFromSupabase() {

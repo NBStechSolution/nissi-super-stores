@@ -10,6 +10,8 @@ import CartDrawer from './components/CartDrawer';
 import LoginModal from './components/LoginModal';
 import UtilityServicesModal from './components/UtilityServicesModal';
 import SubscriptionsModal from './components/SubscriptionsModal';
+import QuickAddProductModal from './components/QuickAddProductModal';
+import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import BottomNav from './components/BottomNav';
 
 // Code-split heavy views for fastest initial customer storefront load
@@ -29,7 +31,8 @@ function MainContent() {
     storeAnnouncement,
     userPhone,
     userName,
-    utilityType
+    utilityType,
+    toggleManagerMode
   } = useStore();
   const [isOnline, setIsOnline] = React.useState(navigator.onLine);
 
@@ -115,14 +118,21 @@ function MainContent() {
 
           <div className="pt-2 space-y-2.5">
             <button
-              onClick={() => setIsLoginOpen(true)}
-              className="w-full py-3 bg-saffron-gradient text-ink font-bold text-xs rounded-xl shadow-sm hover:brightness-105 transition-all"
+              type="button"
+              onClick={() => toggleManagerMode(true)}
+              className="w-full py-3 bg-forest text-paper font-bold text-xs rounded-xl shadow-md hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-1.5"
             >
-              Sign In to Account
+              <span>✨ Unlock Store Manager Access (Add & Delete Items)</span>
+            </button>
+            <button
+              onClick={() => setIsLoginOpen(true)}
+              className="w-full py-2.5 bg-cardcream hover:bg-paper text-ink font-semibold text-xs rounded-xl border border-hairline transition-colors"
+            >
+              Sign In with Mobile
             </button>
             <button
               onClick={() => setActiveView('home')}
-              className="w-full py-2.5 bg-paper text-ink-soft hover:text-ink font-semibold text-xs rounded-xl border border-hairline transition-colors"
+              className="w-full py-2 bg-transparent text-ink-soft hover:text-ink font-semibold text-xs transition-colors"
             >
               Return to Storefront
             </button>
@@ -151,6 +161,8 @@ function MainContent() {
       <LoginModal key={`login-${userPhone}-${userName}`} />
       <UtilityServicesModal key={`util-${utilityType}`} />
       <SubscriptionsModal />
+      <QuickAddProductModal />
+      <DeleteConfirmationModal />
     </main>
   );
 }

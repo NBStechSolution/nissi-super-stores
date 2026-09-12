@@ -1,9 +1,21 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, ShoppingBag, ShieldCheck, Truck, Clock, Heart, Calendar } from 'lucide-react';
+import { X, Plus, Minus, ShoppingBag, ShieldCheck, Truck, Clock, Heart, Calendar, Trash2 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function ProductModal() {
-  const { selectedProduct, setSelectedProduct, addToCart, cart, favorites, toggleFavorite, language, openSubscriptionModal } = useStore();
+  const {
+    selectedProduct,
+    setSelectedProduct,
+    addToCart,
+    cart,
+    favorites,
+    toggleFavorite,
+    language,
+    openSubscriptionModal,
+    setProductToDelete,
+    isManagerMode,
+    isAdminOrStaff
+  } = useStore();
   const [qty, setQty] = useState(1);
 
   if (!selectedProduct) return null;
@@ -192,6 +204,18 @@ export default function ProductModal() {
           >
             <Calendar className="w-3.5 h-3.5" />
             <span>{language === 'te' ? '6:30 AM ఉదయం డెలివరీకి సబ్‌స్క్రైబ్ చేయండి' : 'Subscribe for 6:30 AM Daily Morning Delivery'}</span>
+          </button>
+        )}
+
+        {/* Store Manager Direct Delete Action */}
+        {(isManagerMode || isAdminOrStaff) && !selectedProduct.isUtility && (
+          <button
+            type="button"
+            onClick={() => setProductToDelete(selectedProduct)}
+            className="w-full py-2 bg-kumkum/10 hover:bg-kumkum/20 text-kumkum font-bold rounded-xl text-xs border border-kumkum/25 transition-all flex items-center justify-center gap-1.5"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{language === 'te' ? 'ఈ సరుకును తొలగించండి (Delete Item)' : 'Delete This Item from Store'}</span>
           </button>
         )}
       </div>

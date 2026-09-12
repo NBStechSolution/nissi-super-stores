@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, Minus, Heart, Zap, Mic } from 'lucide-react';
+import { Search, Plus, Minus, Heart, Zap, Mic, Trash2, Settings } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function ProductGrid() {
@@ -17,7 +17,12 @@ export default function ProductGrid() {
     toggleFavorite,
     openUtilityModal,
     t,
-    language
+    language,
+    setIsQuickAddOpen,
+    setProductToDelete,
+    isManagerMode,
+    toggleManagerMode,
+    isAdminOrStaff
   } = useStore();
 
   const [failedImages, setFailedImages] = useState({});
@@ -140,9 +145,40 @@ export default function ProductGrid() {
               </>
             )}
           </button>
+
+          {/* Quick Add Product Button */}
+          <button
+            type="button"
+            onClick={() => setIsQuickAddOpen(true)}
+            className="px-3 py-2.5 bg-forest text-paper hover:bg-forest/90 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold shrink-0 shadow-xs active:scale-95"
+            title="Add New Product to Storefront"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span className="hidden sm:inline">{language === 'te' ? 'సరుకు జోడించు' : 'Add Item'}</span>
+          </button>
+
+          {/* Store Manager Edit/Delete Mode Toggle */}
+          <button
+            type="button"
+            onClick={() => toggleManagerMode()}
+            className={`px-2.5 py-2.5 rounded-xl transition-all flex items-center gap-1 text-xs font-bold shrink-0 border ${
+              isManagerMode
+                ? 'bg-saffron-base/20 border-saffron-base text-ink ring-2 ring-saffron-base/30'
+                : 'bg-paper border-hairline text-ink-soft hover:text-ink'
+            }`}
+            title="Toggle Store Manager Mode to Delete or Add items"
+          >
+            <Settings className={`w-3.5 h-3.5 ${isManagerMode ? 'text-forest animate-spin-slow' : 'text-ink-soft'}`} />
+            <span className="hidden md:inline">{isManagerMode ? 'Manager Mode: ON' : 'Manage'}</span>
+          </button>
         </div>
-        <div className="text-xs text-ink-soft font-medium px-1 sm:px-2 shrink-0">
-          Showing <span className="text-forest font-bold">{filteredProducts.length}</span> fresh items
+        <div className="text-xs text-ink-soft font-medium px-1 sm:px-2 shrink-0 flex items-center gap-2">
+          <span>Showing <span className="text-forest font-bold">{filteredProducts.length}</span> fresh items</span>
+          {isManagerMode && (
+            <span className="text-[10px] bg-forest/15 text-forest font-bold px-2 py-0.5 rounded-full border border-forest/20">
+              ● Edit & Delete Enabled
+            </span>
+          )}
         </div>
       </div>
 
@@ -229,13 +265,29 @@ export default function ProductGrid() {
                       </span>
                     )}
                   </div>
-                  <button
-                    onClick={() => toggleFavorite(product.id)}
-                    className="p-1.5 bg-paper/90 rounded-full border border-hairline text-ink-soft hover:text-kumkum transition-colors shrink-0"
-                    title="Toggle Favorite"
-                  >
-                    <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-kumkum text-kumkum' : ''}`} />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {(isManagerMode || isAdminOrStaff) && !product.isUtility && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setProductToDelete(product);
+                        }}
+                        className="p-1.5 bg-kumkum/10 hover:bg-kumkum/25 text-kumkum rounded-full border border-kumkum/30 transition-colors"
+                        title="Delete Product from Store"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => toggleFavorite(product.id)}
+                      className="p-1.5 bg-paper/90 rounded-full border border-hairline text-ink-soft hover:text-kumkum transition-colors shrink-0"
+                      title="Toggle Favorite"
+                    >
+                      <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-kumkum text-kumkum' : ''}`} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* 2D High-Res Product Image Container - h-36 on mobile for clear visibility */}
