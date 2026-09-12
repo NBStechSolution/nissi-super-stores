@@ -479,7 +479,7 @@ export const StoreProvider = ({ children }) => {
       isEmergency: orderData.deliveryType === 'Emergency',
       paymentMethod: orderData.paymentMethod || 'COD',
       paymentStatus: orderData.paymentStatus || (orderData.paymentMethod?.includes('Online') || orderData.paymentMethod?.includes('UPI') ? (orderData.isUpiApproved ? 'Paid' : 'Pending Verification') : 'Unpaid'),
-      upiId: orderData.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl',
+      upiId: orderData.upiId || PAYMENT_CONFIG?.upiId || '9966712681@axl',
       utr: orderData.utr || '',
       paymentProof: orderData.paymentProof || null,
       paidAt: orderData.paymentStatus === 'Paid' || orderData.isUpiApproved ? 'Just now' : null,
@@ -635,7 +635,7 @@ export const StoreProvider = ({ children }) => {
               isEmergency: Boolean(updatedRow.is_emergency),
               paymentMethod: updatedRow.payment_method || 'COD',
               paymentStatus: updatedRow.payment_status || 'Unpaid',
-              upiId: updatedRow.upi_id || 'abicharan07@axl',
+              upiId: updatedRow.upi_id || '9966712681@axl',
               utr: updatedRow.utr || '',
               assignedRider: updatedRow.assigned_rider || 'Raju M. (+91 91234 56789)'
             };
@@ -754,7 +754,7 @@ export const useStore = () => {
       savedAddresses: [],
       isStoreOpen: true,
       t: (_k, fb) => fb || '',
-      PAYMENT_CONFIG: PAYMENT_CONFIG || { upiId: 'abicharan07@axl', payeeName: 'Nissi Super Stores', qrCodeUrl: '/payment-qr.jpeg' }
+      PAYMENT_CONFIG: PAYMENT_CONFIG || { upiId: '9966712681@axl', upiPhone: '9966712681', upiPhoneFormatted: '+91 9966712681', payeeName: 'Nissi Super Stores', qrCodeUrl: '/payment-qr.jpeg' }
     };
   }
   return context;

@@ -423,8 +423,9 @@ export default function OrderTrackingView() {
         {/* Payment Sub-details */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="p-2.5 bg-paper rounded-xl border border-hairline">
-            <span className="text-[10px] text-ink-soft block font-medium">BENEFICIARY UPI ID</span>
-            <span className="font-mono font-bold text-forest text-xs">{activeOrder.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl'}</span>
+            <span className="text-[10px] text-ink-soft block font-medium">BENEFICIARY UPI / PHONE</span>
+            <span className="font-mono font-bold text-forest text-xs">{activeOrder.upiId || PAYMENT_CONFIG?.upiId || '9966712681@axl'}</span>
+            <span className="text-[10px] text-ink-soft block font-sans mt-0.5">Phone: {PAYMENT_CONFIG?.upiPhoneFormatted || '+91 9966712681'}</span>
           </div>
 
           <div className="p-2.5 bg-paper rounded-xl border border-hairline">
@@ -555,7 +556,7 @@ export default function OrderTrackingView() {
                 <p>Payment: {activeOrder.paymentMethod || 'COD'}</p>
                 <p>Status: {activeOrder.paymentStatus === 'Paid' ? 'PAID ONLINE (VERIFIED)' : activeOrder.paymentStatus === 'Pending Verification' ? 'PENDING VERIFICATION' : 'UNPAID / CASH ON DELIVERY'}</p>
                 {activeOrder.utr && <p>UTR / Ref: {activeOrder.utr}</p>}
-                <p>UPI Payee: {activeOrder.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl'}</p>
+                <p>UPI Payee: {activeOrder.upiId || PAYMENT_CONFIG?.upiId || '9966712681@axl'} (Mobile: {PAYMENT_CONFIG?.upiPhoneFormatted || '+91 9966712681'})</p>
               </div>
             </div>
 
@@ -606,7 +607,7 @@ export default function OrderTrackingView() {
               <h3 className="font-serif font-bold text-lg text-ink mt-1">
                 {activeOrder.paymentStatus === 'Paid' ? 'Payment Verified' : `Scan & Pay ₹${activeOrder.totalAmount}`}
               </h3>
-              <p className="text-xs text-ink-soft">Order #{activeOrder.id} • {activeOrder.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl'}</p>
+              <p className="text-xs text-ink-soft">Order #{activeOrder.id} • Mobile: {PAYMENT_CONFIG?.upiPhoneFormatted || '+91 9966712681'} • {activeOrder.upiId || PAYMENT_CONFIG?.upiId || '9966712681@axl'}</p>
             </div>
 
             {/* QR View Mode Toggle */}
@@ -637,7 +638,7 @@ export default function OrderTrackingView() {
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&data=${encodeURIComponent(
                     PAYMENT_CONFIG?.generateUpiUri
                       ? PAYMENT_CONFIG.generateUpiUri(activeOrder.totalAmount, activeOrder.id)
-                      : `upi://pay?pa=${activeOrder.upiId || 'abicharan07@axl'}&pn=Nissi%20Super%20Stores&am=${activeOrder.totalAmount}&cu=INR&tn=Order%20${activeOrder.id}`
+                      : `upi://pay?pa=${activeOrder.upiId || '9966712681@axl'}&pn=Nissi%20Super%20Stores&am=${activeOrder.totalAmount}&cu=INR&tn=Order%20${activeOrder.id}`
                   )}`}
                   alt={`Scan to Pay ₹${activeOrder.totalAmount}`}
                   className="w-64 h-64 object-contain rounded-xl shadow-xs"
@@ -664,11 +665,11 @@ export default function OrderTrackingView() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-3 py-2 font-mono text-xs font-bold text-forest bg-forest/5 rounded-xl border border-forest/20">
-                <span className="truncate">{activeOrder.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl'}</span>
+                <span className="truncate">{activeOrder.upiId || PAYMENT_CONFIG?.upiId || '9966712681@axl'}</span>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(activeOrder.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl');
+                    navigator.clipboard.writeText(activeOrder.upiId || PAYMENT_CONFIG?.upiId || '9966712681@axl');
                     setCopiedUpi(true);
                     setTimeout(() => setCopiedUpi(false), 2000);
                   }}

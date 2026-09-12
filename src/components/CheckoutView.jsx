@@ -72,6 +72,7 @@ export default function CheckoutView() {
   const [isUpiApproved, setIsUpiApproved] = useState(false);
   const [upiUtrInput, setUpiUtrInput] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [copiedPhone, setCopiedPhone] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [qrViewMode, setQrViewMode] = useState('dynamic'); // 'dynamic' (auto-amount) | 'merchant' (standee)
   const [paymentProofImage, setPaymentProofImage] = useState(null);
@@ -86,7 +87,9 @@ export default function CheckoutView() {
     return '';
   };
 
-  const activeUpiId = PAYMENT_CONFIG?.upiId || 'abicharan07@axl';
+  const activeUpiId = PAYMENT_CONFIG?.upiId || '9966712681@axl';
+  const activeUpiPhone = PAYMENT_CONFIG?.upiPhone || '9966712681';
+  const activeUpiPhoneFormatted = PAYMENT_CONFIG?.upiPhoneFormatted || '+91 9966712681';
   const dynamicUpiUri = PAYMENT_CONFIG?.generateUpiUri
     ? PAYMENT_CONFIG.generateUpiUri(grandTotal)
     : `upi://pay?pa=${activeUpiId}&pn=Nissi%20Super%20Stores&am=${grandTotal}&cu=INR&tn=Nissi%20Order`;
@@ -619,11 +622,11 @@ export default function CheckoutView() {
                     <p className="font-bold text-ink flex items-center gap-1.5">
                       <span>Direct Merchant Payment</span>
                       <span className="text-[10px] px-2 py-0.5 bg-forest/10 text-forest font-bold rounded-full border border-forest/20">
-                        {PAYMENT_CONFIG?.bankProvider || 'Axis Bank / AXL'}
+                        {PAYMENT_CONFIG?.bankProvider || 'Axis Bank / UPI Phone Number'}
                       </span>
                     </p>
                     <p className="text-[11px] text-ink-soft">
-                      Scan the QR below or transfer directly to UPI ID <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-forest border border-forest/20 select-all">{activeUpiId}</code>.
+                      Transfer money to Phone Number <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-forest border border-forest/20 select-all">{activeUpiPhoneFormatted}</code> or UPI ID <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-forest border border-forest/20 select-all">{activeUpiId}</code>, or scan the QR below.
                     </p>
                   </div>
                 </div>
@@ -706,15 +709,61 @@ export default function CheckoutView() {
 
                   {/* UPI Details, Mobile App Triggers, Proof Upload & UTR */}
                   <div className="flex-1 w-full space-y-3.5 text-xs">
-                    <div>
-                      <span className="font-bold text-ink">Merchant UPI Identifier</span>
+                    {/* Phone Number Transfer Card & UPI ID */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-ink flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-forest" />
+                          <span>Pay to UPI Mobile Number</span>
+                        </span>
+                        <span className="text-[10px] text-forest font-bold bg-forest/10 px-2 py-0.5 rounded-full">
+                          PhonePe • GPay • Paytm
+                        </span>
+                      </div>
                       
-                      {/* Copy UPI Box */}
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <div className="flex-1 flex items-center justify-between px-3 py-2 bg-white border border-forest/30 rounded-xl font-mono text-xs font-bold text-forest shadow-2xs">
-                          <span className="truncate">{activeUpiId}</span>
-                          <span className="text-[10px] font-sans font-semibold text-ink-soft bg-cardcream px-1.5 py-0.5 rounded border border-hairline">
-                            AXIS / AXL
+                      {/* Phone Number Box with 1-Tap Copy */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center justify-between px-3 py-2 bg-white border-2 border-forest/30 rounded-xl font-mono text-xs font-bold text-forest shadow-2xs">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm sm:text-base font-bold text-ink tracking-wide">{activeUpiPhoneFormatted}</span>
+                          </div>
+                          <span className="text-[10px] font-sans font-semibold text-forest bg-forest/10 px-2 py-0.5 rounded-md border border-forest/20">
+                            Transfer to Mobile
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(activeUpiPhone);
+                            setCopiedPhone(true);
+                            setTimeout(() => setCopiedPhone(false), 2000);
+                          }}
+                          className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all shrink-0 cursor-pointer ${
+                            copiedPhone
+                              ? 'bg-forest text-paper border-forest'
+                              : 'bg-saffron-gradient hover:brightness-105 text-ink border-saffron-base/40 shadow-xs'
+                          }`}
+                        >
+                          {copiedPhone ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-ink" />
+                              <span>Copy Number</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Secondary UPI ID Box */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center justify-between px-3 py-1.5 bg-cardcream/70 border border-hairline rounded-xl font-mono text-[11px] font-bold text-ink-soft">
+                          <span className="truncate">UPI ID: {activeUpiId}</span>
+                          <span className="text-[9px] font-sans font-semibold text-ink-soft bg-paper px-1.5 py-0.5 rounded border border-hairline">
+                            AXIS BANK
                           </span>
                         </div>
                         <button
@@ -724,7 +773,7 @@ export default function CheckoutView() {
                             setCopiedUpi(true);
                             setTimeout(() => setCopiedUpi(false), 2000);
                           }}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all shrink-0 ${
+                          className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1 border transition-all shrink-0 cursor-pointer ${
                             copiedUpi
                               ? 'bg-forest text-paper border-forest'
                               : 'bg-cardcream hover:bg-paper text-ink border-hairline'
@@ -732,13 +781,13 @@ export default function CheckoutView() {
                         >
                           {copiedUpi ? (
                             <>
-                              <Check className="w-3.5 h-3.5" />
-                              <span>Copied!</span>
+                              <Check className="w-3 h-3" />
+                              <span>Copied</span>
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5 text-forest" />
-                              <span>Copy UPI</span>
+                              <Copy className="w-3 h-3 text-forest" />
+                              <span>Copy ID</span>
                             </>
                           )}
                         </button>
@@ -1196,7 +1245,25 @@ export default function CheckoutView() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-3 py-2 font-mono text-xs font-bold text-forest bg-forest/5 rounded-xl border border-forest/20">
-                <span className="truncate">{activeUpiId}</span>
+                <div className="flex items-center gap-1.5 truncate">
+                  <Phone className="w-3.5 h-3.5 text-forest shrink-0" />
+                  <span>{activeUpiPhoneFormatted}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(activeUpiPhone);
+                    setCopiedPhone(true);
+                    setTimeout(() => setCopiedPhone(false), 2000);
+                  }}
+                  className="px-2.5 py-1 bg-white rounded-lg border border-hairline text-[10px] font-sans font-bold text-ink hover:text-forest transition-colors shrink-0 ml-2 cursor-pointer"
+                >
+                  {copiedPhone ? 'Copied!' : 'Copy Mobile'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between px-3 py-1.5 font-mono text-[11px] text-ink-soft bg-cardcream rounded-xl border border-hairline">
+                <span className="truncate">UPI ID: {activeUpiId}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -1204,9 +1271,9 @@ export default function CheckoutView() {
                     setCopiedUpi(true);
                     setTimeout(() => setCopiedUpi(false), 2000);
                   }}
-                  className="px-2.5 py-1 bg-white rounded-lg border border-hairline text-[10px] font-sans font-bold text-ink hover:text-forest transition-colors shrink-0 ml-2"
+                  className="text-[10px] text-forest underline font-bold ml-2 cursor-pointer"
                 >
-                  {copiedUpi ? 'Copied!' : 'Copy'}
+                  {copiedUpi ? 'Copied' : 'Copy ID'}
                 </button>
               </div>
               <button
