@@ -56,8 +56,8 @@ export default function CheckoutView() {
   const [formData, setFormData] = useState(() => ({
     name: userName || '',
     phone: userPhone ? (userPhone.startsWith('+91') ? userPhone : `+91 ${userPhone}`) : '',
-    address: 'Flat 402, Sai Residency, Jubilee Hills Road No. 36',
-    pincode: '500033'
+    address: '',
+    pincode: ''
   }));
 
   const [formError, setFormError] = useState('');
@@ -362,7 +362,8 @@ export default function CheckoutView() {
                   rows={2}
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full p-3 bg-paper rounded-xl border border-hairline text-ink font-sans focus:outline-none focus:border-forest"
+                  placeholder="House / Flat No., Apartment / Building Name, Street, Landmark, Area"
+                  className="w-full p-3 bg-paper rounded-xl border border-hairline text-ink font-sans placeholder:text-ink-soft/40 focus:outline-none focus:border-forest text-xs"
                 />
               </div>
 
@@ -371,9 +372,10 @@ export default function CheckoutView() {
                 <input
                   type="text"
                   required
+                  placeholder="e.g. 500033"
                   value={formData.pincode}
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                  className="w-full px-3 py-2.5 bg-paper rounded-xl border border-hairline text-ink font-sans focus:outline-none focus:border-forest"
+                  className="w-full px-3 py-2.5 bg-paper rounded-xl border border-hairline text-ink font-sans placeholder:text-ink-soft/40 focus:outline-none focus:border-forest text-xs"
                 />
               </div>
             </div>

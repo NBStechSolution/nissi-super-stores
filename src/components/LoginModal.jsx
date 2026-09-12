@@ -128,14 +128,20 @@ export default function LoginModal() {
                 <span>Saved Delivery Addresses</span>
               </h4>
               <div className="space-y-2 max-h-36 overflow-y-auto">
-                {savedAddresses.map((addr) => (
-                  <div key={addr.id} className="p-3 bg-cardcream/60 border border-hairline rounded-xl text-xs space-y-1">
-                    <span className="font-bold text-forest bg-forest/10 px-2 py-0.5 rounded text-[10px]">
-                      {addr.tag}
-                    </span>
-                    <p className="text-ink-soft leading-snug">{addr.address}</p>
-                  </div>
-                ))}
+                {savedAddresses.length > 0 ? (
+                  savedAddresses.map((addr) => (
+                    <div key={addr.id} className="p-3 bg-cardcream/60 border border-hairline rounded-xl text-xs space-y-1">
+                      <span className="font-bold text-forest bg-forest/10 px-2 py-0.5 rounded text-[10px]">
+                        {addr.tag}
+                      </span>
+                      <p className="text-ink-soft leading-snug">{addr.address}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[11px] text-ink-soft italic p-3 bg-cardcream/40 rounded-xl border border-dashed border-hairline text-center">
+                    No saved addresses yet. Enter your address during checkout and it will be remembered.
+                  </p>
+                )}
               </div>
             </div>
 

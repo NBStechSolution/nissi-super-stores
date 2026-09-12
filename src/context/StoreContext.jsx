@@ -72,10 +72,26 @@ export const StoreProvider = ({ children }) => {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
 
-  const [savedAddresses, setSavedAddresses] = useState([
-    { id: 1, tag: 'Home', address: 'Flat 402, Sai Residency, Jubilee Hills Road No. 36, Hyderabad - 500033' },
-    { id: 2, tag: 'Work', address: 'Plot 12, Hitec City Phase 2, Madhapur, Hyderabad - 500081' }
-  ]);
+  const [savedAddresses, setSavedAddresses] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nissi_saved_addresses');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Could not parse saved addresses:', e);
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nissi_saved_addresses', JSON.stringify(savedAddresses));
+    } catch (e) {
+      console.warn('Failed to persist saved addresses to localStorage:', e);
+    }
+  }, [savedAddresses]);
 
   const [favorites, setFavorites] = useState(['prod-1', 'prod-3']);
 
@@ -171,7 +187,7 @@ export const StoreProvider = ({ children }) => {
         frequency: 'Daily',
         deliveryTime: '06:30 AM',
         status: 'Active',
-        address: 'Flat 402, Sai Residency, Jubilee Hills Road No. 36',
+        address: 'Doorstep Delivery',
         nextDelivery: 'Tomorrow, 6:30 AM',
         createdAt: new Date().toISOString()
       }
@@ -207,7 +223,7 @@ export const StoreProvider = ({ children }) => {
       frequency,
       deliveryTime,
       status: 'Active',
-      address: address || savedAddresses[0]?.address || 'Flat 402, Sai Residency, Jubilee Hills Road No. 36',
+      address: address || savedAddresses[0]?.address || 'Doorstep Delivery',
       nextDelivery: 'Tomorrow, 6:30 AM',
       createdAt: new Date().toISOString()
     };
