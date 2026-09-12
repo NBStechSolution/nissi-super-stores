@@ -9,6 +9,7 @@ import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
 import LoginModal from './components/LoginModal';
 import UtilityServicesModal from './components/UtilityServicesModal';
+import SubscriptionsModal from './components/SubscriptionsModal';
 import BottomNav from './components/BottomNav';
 
 // Code-split heavy views for fastest initial customer storefront load
@@ -149,6 +150,7 @@ function MainContent() {
       <CartDrawer />
       <LoginModal key={`login-${userPhone}-${userName}`} />
       <UtilityServicesModal key={`util-${utilityType}`} />
+      <SubscriptionsModal />
     </main>
   );
 }

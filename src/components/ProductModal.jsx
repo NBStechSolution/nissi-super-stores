@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, ShoppingBag, ShieldCheck, Truck, Clock, Heart } from 'lucide-react';
+import { X, Plus, Minus, ShoppingBag, ShieldCheck, Truck, Clock, Heart, Calendar } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function ProductModal() {
-  const { selectedProduct, setSelectedProduct, addToCart, cart, favorites, toggleFavorite, language } = useStore();
+  const { selectedProduct, setSelectedProduct, addToCart, cart, favorites, toggleFavorite, language, openSubscriptionModal } = useStore();
   const [qty, setQty] = useState(1);
 
   if (!selectedProduct) return null;
@@ -177,6 +177,21 @@ export default function ProductModal() {
             className="w-full py-3 bg-kumkum/10 text-kumkum rounded-xl font-semibold text-xs border border-kumkum/20 cursor-not-allowed"
           >
             {maxAvailable > 0 ? 'Max Stock Added in Cart' : 'Currently Unavailable'}
+          </button>
+        )}
+
+        {/* 6:30 AM Morning Essentials Repeat Delivery Option */}
+        {!selectedProduct.isUtility && (
+          <button
+            type="button"
+            onClick={() => {
+              openSubscriptionModal(selectedProduct);
+              setSelectedProduct(null);
+            }}
+            className="w-full py-2.5 bg-forest/10 hover:bg-forest/20 text-forest font-bold rounded-xl text-xs border border-forest/25 transition-all flex items-center justify-center gap-2"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>{language === 'te' ? '6:30 AM ఉదయం డెలివరీకి సబ్‌స్క్రైబ్ చేయండి' : 'Subscribe for 6:30 AM Daily Morning Delivery'}</span>
           </button>
         )}
       </div>

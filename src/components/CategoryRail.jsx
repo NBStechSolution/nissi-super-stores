@@ -12,7 +12,6 @@ export default function CategoryRail() {
     snacks: 'స్నాక్స్',
     drinks: 'కూల్ డ్రింక్స్',
     icecreams: 'ఐస్ క్రీమ్స్',
-    coconut: 'కొబ్బరి బొండాలు',
     pooja: 'పూజా సామాగ్రి',
     pickles: 'పచ్చళ్ళు',
     utility: 'బిల్లులు & రీఛార్జ్'

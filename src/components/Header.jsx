@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Store, Clock, Zap, Tag, User, Globe, Truck, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Store, Clock, Zap, Tag, User, Globe, Truck, ArrowLeft, Calendar } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function Header() {
@@ -18,7 +18,9 @@ export default function Header() {
     userName,
     isAdminOrStaff,
     setIsLoginOpen,
-    storeAnnouncement
+    storeAnnouncement,
+    openSubscriptionModal,
+    subscriptions
   } = useStore();
 
   return (
@@ -97,6 +99,19 @@ export default function Header() {
           >
             <Globe className="w-3.5 h-3.5 text-forest" />
             <span className="text-[11px] sm:text-xs">{language === 'en' ? 'తెలుగు' : 'EN'}</span>
+          </button>
+
+          {/* Morning Essentials 6:30 AM Pass */}
+          <button
+            onClick={() => openSubscriptionModal()}
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-cardcream hover:bg-paper text-ink font-semibold rounded-xl border border-hairline text-xs transition-colors shadow-xs"
+            title="Manage 6:30 AM Morning Milk & Daily Essentials"
+          >
+            <Calendar className="w-3.5 h-3.5 text-forest" />
+            <span className="hidden sm:inline">{language === 'te' ? 'ఉదయం డెలివరీ' : 'Morning Pass'}</span>
+            <span className="text-[10px] font-mono font-bold bg-forest/15 text-forest px-1.5 py-0.5 rounded-full leading-none">
+              {subscriptions?.length || 0}
+            </span>
           </button>
 
           {/* Customer Login Button (Desktop only, mobile has BottomNav) */}

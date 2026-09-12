@@ -7,7 +7,6 @@ export const CATEGORIES = [
   { id: 'icecreams', name: 'Ice Creams', nameTe: 'ఐస్ క్రీములు', icon: '🍦' },
   { id: 'pickles', name: 'Pickles & Preserves', nameTe: 'ఊరగాయలు', icon: '🫙' },
   { id: 'pooja', name: 'Pooja Items', nameTe: 'పూజా ద్రవ్యాలు', icon: '🪔' },
-  { id: 'coconut', name: 'Fresh Coconut', nameTe: 'కొబ్బరికాయలు', icon: '🥥' },
   { id: 'utilities', name: 'Bill Pay & Recharge', nameTe: 'బిల్లులు & రీఛార్జ్', icon: '⚡' },
 ];
 
@@ -266,22 +265,22 @@ export const INITIAL_PRODUCTS = [
     imageBg: '#F5EFE6'
   },
 
-  // Coconut
+  // Pure Desi Cow Ghee
   {
     id: 'prod-4',
-    name: 'Fresh Tender Coconut (Drink / Pooja)',
-    nameTe: 'లేత బొండం కొబ్బరి (1 పీస్)',
-    category: 'coconut',
-    price: 45,
-    mrp: 50,
-    unit: '1 Piece',
-    stock: 12,
+    name: 'Pure Desi Cow Ghee (500ml)',
+    nameTe: 'స్వచ్ఛమైన ఆవు నెయ్యి (500మి.లీ)',
+    category: 'grocery',
+    price: 320,
+    mrp: 350,
+    unit: '500 ml Jar',
+    stock: 18,
     lowStockThreshold: 4,
-    badge: '15-Min Ready',
-    description: 'Sweet coconut water rich in electrolytes, handpicked from coastal groves.',
-    image2D: 'https://images.unsplash.com/photo-1544378730-8b5104b18790?auto=format&fit=crop&w=600&q=80',
-    fallbackEmoji: '🥥',
-    imageBg: '#E9F5E6'
+    badge: '100% Pure',
+    description: 'Traditional golden bilona-churned cow ghee with rich grainy texture and divine aroma.',
+    image2D: 'https://images.unsplash.com/photo-1589927986089-35812388d1f4?auto=format&fit=crop&w=600&q=80',
+    fallbackEmoji: '🧈',
+    imageBg: '#FFFBEB'
   },
 
   // Utility Bill Payments
@@ -350,12 +349,12 @@ export const INITIAL_ORDERS = [
     phone: '+91 94401 88765',
     address: 'House 12-4-88, Market Street, Secunderabad',
     items: [
-      { id: 'prod-4', name: 'Fresh Tender Coconut', quantity: 3, price: 45 },
+      { id: 'prod-4', name: 'Pure Desi Cow Ghee (500ml)', quantity: 1, price: 320 },
       { id: 'prod-9', name: 'Mysore Sandal Premium Agarbatti', quantity: 1, price: 65 }
     ],
-    subtotal: 200,
+    subtotal: 385,
     deliveryFee: 0,
-    totalAmount: 200,
+    totalAmount: 385,
     deliveryType: 'Normal',
     status: 'Preparing',
     placedAt: '09:45 AM Today',

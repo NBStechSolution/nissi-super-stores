@@ -184,14 +184,21 @@ function HeroScene3D({ className = "" }) {
       return body;
     }, 2.9, 0.15, -0.3, 'rice', 0);
 
-    // 6. Coconut
+    // 6. Ghee jar
     addItem(() => {
-      const body = new THREE.Mesh(
-        new THREE.SphereGeometry(0.42, 20, 20),
-        matteBody(0x3a2c22)
+      const g = new THREE.Group();
+      const pot = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.4, 0.55, 20),
+        glossyCap(0xf59e0b)
       );
-      return body;
-    }, 0.9, 1.15, 0.9, 'coconut', 2);
+      const lid = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.24, 0.24, 0.15, 16),
+        matteBody(0xd97706)
+      );
+      lid.position.y = 0.35;
+      g.add(pot, lid);
+      return g;
+    }, 0.9, 1.15, 0.9, 'ghee', 2);
 
     // 7. Small fruit stack (2 spheres)
     addItem(() => {

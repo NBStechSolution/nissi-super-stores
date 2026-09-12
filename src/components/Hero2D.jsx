@@ -151,24 +151,24 @@ export default function Hero2D() {
 
           {/* Card 4 */}
           <div
-            onClick={() => setSelectedCategory('coconut')}
+            onClick={() => setSelectedCategory('grocery')}
             className="w-28 shrink-0 bg-paper border border-hairline rounded-xl p-2 shadow-xs space-y-1.5 cursor-pointer active:scale-95 transition-transform"
           >
             <div className="w-full h-16 rounded-lg overflow-hidden bg-cardcream flex items-center justify-center">
-              {!failedImages.coconut ? (
+              {!failedImages.ghee ? (
                 <img
-                  src="https://images.unsplash.com/photo-1544378730-8b5104b18790?auto=format&fit=crop&w=300&q=80"
-                  alt="Tender Coconut"
-                  onError={() => handleImgError('coconut')}
+                  src="https://images.unsplash.com/photo-1589927986089-35812388d1f4?auto=format&fit=crop&w=300&q=80"
+                  alt="Pure Desi Ghee"
+                  onError={() => handleImgError('ghee')}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-2xl">🥥</span>
+                <span className="text-2xl">🧈</span>
               )}
             </div>
             <div className="flex items-center justify-between text-[11px]">
-              <span className="font-serif font-bold text-ink truncate">Coconut</span>
-              <span className="text-[9px] bg-saffron-base/20 text-ink font-bold px-1 rounded">₹45</span>
+              <span className="font-serif font-bold text-ink truncate">Desi Ghee</span>
+              <span className="text-[9px] bg-saffron-base/20 text-ink font-bold px-1 rounded">₹320</span>
             </div>
           </div>
         </div>
@@ -324,27 +324,27 @@ export default function Hero2D() {
             </div>
           </div>
 
-          {/* Card 4: Tender Coconut */}
+          {/* Card 4: Pure Desi Ghee */}
           <div
-            onClick={() => setSelectedCategory('coconut')}
+            onClick={() => setSelectedCategory('grocery')}
             className="group bg-paper border border-hairline rounded-crate p-3.5 shadow-md space-y-2 transform transition-all hover:-translate-y-1 -mt-2 cursor-pointer hover:border-forest/40"
-            title="Browse Coconut & Fresh Produce"
+            title="Browse Grocery & Pure Desi Ghee"
           >
             <div className="w-full h-28 rounded-xl overflow-hidden bg-cardcream flex items-center justify-center">
-              {!failedImages.coconut ? (
+              {!failedImages.ghee ? (
                 <img
-                  src="https://images.unsplash.com/photo-1544378730-8b5104b18790?auto=format&fit=crop&w=600&q=80"
-                  alt="Tender Coconut"
-                  onError={() => handleImgError('coconut')}
+                  src="https://images.unsplash.com/photo-1589927986089-35812388d1f4?auto=format&fit=crop&w=600&q=80"
+                  alt="Pure Desi Ghee"
+                  onError={() => handleImgError('ghee')}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               ) : (
-                <span className="text-5xl">🥥</span>
+                <span className="text-5xl">🧈</span>
               )}
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="font-serif font-bold text-ink truncate group-hover:text-forest transition-colors">Tender Coconut</span>
-              <span className="text-[10px] bg-saffron-base/20 text-ink font-bold px-1.5 py-0.5 rounded">₹45</span>
+              <span className="font-serif font-bold text-ink truncate group-hover:text-forest transition-colors">Pure Desi Ghee</span>
+              <span className="text-[10px] bg-saffron-base/20 text-ink font-bold px-1.5 py-0.5 rounded">₹320</span>
             </div>
           </div>
 

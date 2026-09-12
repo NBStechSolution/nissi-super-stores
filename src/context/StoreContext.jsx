@@ -79,15 +79,124 @@ export const StoreProvider = ({ children }) => {
       const saved = localStorage.getItem('nissi_products_v1');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Purge any legacy coconut entries from localStorage cache
+          const cleaned = parsed
+            .filter((p) => p && p.category !== 'coconut' && !p.name?.toLowerCase().includes('coconut'))
+            .map((p) => (p.id === 'prod-4' && p.category === 'coconut' ? INITIAL_PRODUCTS.find((ip) => ip.id === 'prod-4') : p));
+          if (cleaned.length > 0) return cleaned;
+        }
       }
     } catch (e) {
       console.warn('Could not parse saved products from localStorage:', e);
     }
     return INITIAL_PRODUCTS;
   });
-  const [cart, setCart] = useState([]);
+
+  // Persistent shopping cart synced with localStorage
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nissi_cart_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (item) => item && item.category !== 'coconut' && !item.name?.toLowerCase().includes('coconut')
+          );
+        }
+      }
+    } catch (e) {
+      console.warn('Could not parse saved cart from localStorage:', e);
+    }
+    return [];
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Sync cart to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('nissi_cart_v1', JSON.stringify(cart));
+    } catch (e) {
+      console.warn('Could not persist cart to localStorage:', e);
+    }
+  }, [cart]);
+
+  // Daily Essentials Morning Subscriptions (e.g. Milk, Curd, Pooja items)
+  const [subscriptions, setSubscriptions] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nissi_subscriptions_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Could not parse subscriptions from localStorage:', e);
+    }
+    return [
+      {
+        id: 'sub-1',
+        productId: 'prod-3',
+        productName: 'Heritage Special Toned Milk',
+        productNameTe: 'హెరిటేజ్ స్పెషల్ టోన్డ్ మిల్క్ (500మి.లీ)',
+        unit: '500 ml Packet',
+        price: 32,
+        quantity: 2,
+        frequency: 'Daily',
+        deliveryTime: '06:30 AM',
+        status: 'Active',
+        address: 'Flat 402, Sai Residency, Jubilee Hills Road No. 36',
+        nextDelivery: 'Tomorrow, 6:30 AM',
+        createdAt: new Date().toISOString()
+      }
+    ];
+  });
+
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [subscriptionTargetProduct, setSubscriptionTargetProduct] = useState(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nissi_subscriptions_v1', JSON.stringify(subscriptions));
+    } catch (e) {
+      console.warn('Could not persist subscriptions to localStorage:', e);
+    }
+  }, [subscriptions]);
+
+  const openSubscriptionModal = (product = null) => {
+    setSubscriptionTargetProduct(product);
+    setIsSubscriptionModalOpen(true);
+  };
+
+  const addSubscription = ({ product, quantity = 1, frequency = 'Daily', deliveryTime = '06:30 AM', address = '' }) => {
+    if (!product) return null;
+    const newSub = {
+      id: `sub-${Date.now()}`,
+      productId: product.id,
+      productName: product.name,
+      productNameTe: product.nameTe || product.name,
+      unit: product.unit,
+      price: product.price,
+      quantity,
+      frequency,
+      deliveryTime,
+      status: 'Active',
+      address: address || savedAddresses[0]?.address || 'Flat 402, Sai Residency, Jubilee Hills Road No. 36',
+      nextDelivery: 'Tomorrow, 6:30 AM',
+      createdAt: new Date().toISOString()
+    };
+    setSubscriptions((prev) => [newSub, ...prev]);
+    return newSub;
+  };
+
+  const toggleSubscriptionStatus = (subId) => {
+    setSubscriptions((prev) =>
+      prev.map((s) => (s.id === subId ? { ...s, status: s.status === 'Active' ? 'Paused' : 'Active' } : s))
+    );
+  };
+
+  const cancelSubscription = (subId) => {
+    setSubscriptions((prev) => prev.filter((s) => s.id !== subId));
+  };
 
   const [orders, setOrders] = useState(() => {
     try {
@@ -735,7 +844,17 @@ export const StoreProvider = ({ children }) => {
         setSelectedCategory,
         searchQuery,
         setSearchQuery,
-        PAYMENT_CONFIG
+        PAYMENT_CONFIG,
+        subscriptions,
+        setSubscriptions,
+        isSubscriptionModalOpen,
+        setIsSubscriptionModalOpen,
+        subscriptionTargetProduct,
+        setSubscriptionTargetProduct,
+        openSubscriptionModal,
+        addSubscription,
+        toggleSubscriptionStatus,
+        cancelSubscription
       }}
     >
       {children}
@@ -750,12 +869,18 @@ export const useStore = () => {
       products: [],
       cart: [],
       orders: [],
+      subscriptions: [],
       favorites: [],
       savedAddresses: [],
       isStoreOpen: true,
       t: (_k, fb) => fb || '',
-      PAYMENT_CONFIG: PAYMENT_CONFIG || { upiId: 'abicharan07@axl', payeeName: 'Nissi Super Stores', qrCodeUrl: '/payment-qr.jpeg' }
+      PAYMENT_CONFIG: PAYMENT_CONFIG || { upiId: 'abicharan07@axl', payeeName: 'Nissi Super Stores', qrCodeUrl: '/payment-qr.jpeg' },
+      openSubscriptionModal: () => {},
+      addSubscription: () => {},
+      toggleSubscriptionStatus: () => {},
+      cancelSubscription: () => {}
     };
   }
   return context;
 };
+
