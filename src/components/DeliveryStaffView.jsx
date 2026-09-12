@@ -26,9 +26,6 @@ export default function DeliveryStaffView() {
     PAYMENT_CONFIG
   } = useStore();
   const [activeTab, setActiveTab] = useState('active'); // 'active' | 'history'
-  const [otpModalOrder, setOtpModalOrder] = useState(null);
-  const [enteredOtp, setEnteredOtp] = useState('');
-  const [otpError, setOtpError] = useState('');
   const [printSlipOrder, setPrintSlipOrder] = useState(null);
   const [riderQrOrder, setRiderQrOrder] = useState(null);
   const [copiedUpi, setCopiedUpi] = useState(false);
@@ -36,21 +33,8 @@ export default function DeliveryStaffView() {
   const activeDeliveries = orders.filter((o) => o.status !== 'Delivered' && o.status !== 'Cancelled');
   const completedDeliveries = orders.filter((o) => o.status === 'Delivered');
 
-  const handleVerifyOtp = (e) => {
-    e.preventDefault();
-    setOtpError('');
-    if (!enteredOtp.trim()) {
-      setOtpError('Please enter the 4-digit PIN provided by customer.');
-      return;
-    }
-
-    const res = verifyAndDeliverOrder(otpModalOrder.id, enteredOtp);
-    if (res.success) {
-      setOtpModalOrder(null);
-      setEnteredOtp('');
-    } else {
-      setOtpError(res.message);
-    }
+  const handleDirectDeliver = (orderId) => {
+    verifyAndDeliverOrder(orderId);
   };
 
   return (
@@ -274,14 +258,11 @@ export default function DeliveryStaffView() {
                     )}
                     {ord.status === 'Out for Delivery' && (
                       <button
-                        onClick={() => {
-                          setOtpModalOrder(ord);
-                          setEnteredOtp('');
-                          setOtpError('');
-                        }}
-                        className="px-4 py-2 bg-forest text-paper font-bold rounded-xl shadow-md hover:bg-forest-soft transition-all flex items-center gap-1.5"
+                        onClick={() => handleDirectDeliver(ord.id)}
+                        className="px-4 py-2 bg-forest text-paper font-bold rounded-xl shadow-md hover:bg-forest-soft transition-all flex items-center gap-1.5 cursor-pointer"
                       >
-                        <ShieldCheck className="w-4 h-4" /> Enter Customer OTP to Deliver
+                        <CheckCircle2 className="w-4 h-4 text-saffron-highlight" />
+                        <span>Confirm Handover & Deliver</span>
                       </button>
                     )}
                   </div>
@@ -307,67 +288,6 @@ export default function DeliveryStaffView() {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* OTP VERIFICATION MODAL */}
-      {otpModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-cardcream border border-hairline rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-forest/10 text-forest rounded-xl">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <h3 className="font-serif font-bold text-base text-ink">Verify Handover PIN</h3>
-              </div>
-              <button
-                onClick={() => setOtpModalOrder(null)}
-                className="p-1 text-ink-soft hover:text-ink"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-ink-soft leading-relaxed">
-              Ask customer <strong className="text-ink">{otpModalOrder.customerName}</strong> for the 4-digit Handover PIN displayed on their order screen.
-            </p>
-
-            {otpError && (
-              <div className="p-2.5 bg-kumkum/10 border border-kumkum/30 text-kumkum rounded-xl text-xs font-semibold">
-                {otpError}
-              </div>
-            )}
-
-            <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <input
-                type="text"
-                maxLength={4}
-                autoFocus
-                placeholder="• • • •"
-                value={enteredOtp}
-                onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
-                className="w-full text-center py-3 bg-paper rounded-2xl border border-hairline text-2xl font-mono font-bold tracking-[0.5em] text-forest focus:outline-none focus:border-forest"
-              />
-
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setOtpModalOrder(null)}
-                  className="px-4 py-2 bg-paper border border-hairline rounded-xl text-xs font-semibold text-ink"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-forest text-paper rounded-xl text-xs font-bold shadow-md hover:bg-forest-soft transition-all flex items-center gap-1.5"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Verify & Deliver</span>
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
 

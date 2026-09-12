@@ -211,7 +211,7 @@ export const StoreProvider = ({ children }) => {
 
   const clearCart = () => setCart([]);
 
-  const loginWithOtp = (phone, name = 'Valued Customer') => {
+  const loginDirect = (phone, name = 'Valued Customer') => {
     const rawDigitsOnly = String(phone || '').replace(/\D/g, '');
     const cleanP = rawDigitsOnly.length === 12 && rawDigitsOnly.startsWith('91')
       ? rawDigitsOnly.slice(2)
@@ -232,6 +232,9 @@ export const StoreProvider = ({ children }) => {
       console.warn('Failed to persist user session:', e);
     }
   };
+
+  // Backward compatibility alias
+  const loginWithOtp = loginDirect;
 
   const logout = () => {
     setIsLoggedIn(false);
@@ -389,23 +392,18 @@ export const StoreProvider = ({ children }) => {
     }
   };
 
-  const verifyAndDeliverOrder = (orderId, enteredOtp) => {
+  const verifyAndDeliverOrder = (orderId) => {
     const order = orders.find((o) => o.id === orderId);
     if (!order) return { success: false, message: 'Order not found.' };
     if (order.status === 'Delivered') return { success: true, message: 'Order already delivered.' };
 
-    if (order.deliveryOtp && enteredOtp.trim() !== String(order.deliveryOtp).trim()) {
-      return { success: false, message: 'Incorrect OTP. Ask the customer for the 4-digit PIN on their tracking screen.' };
-    }
-
     setOrders((prev) =>
       prev.map((ord) => (ord.id === orderId ? { ...ord, status: 'Delivered', deliveredAt: 'Just now' } : ord))
     );
-    return { success: true, message: 'Delivery successfully confirmed with OTP!' };
+    return { success: true, message: 'Order successfully marked as delivered!' };
   };
 
   const createOrder = (orderData) => {
-    const otp = String(Math.floor(1000 + Math.random() * 9000));
     const newOrder = {
       id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
       customerName: orderData.name || userName,
@@ -422,7 +420,6 @@ export const StoreProvider = ({ children }) => {
       placedAt: 'Just now',
       deliveryWindow: orderData.deliveryType === 'Emergency' ? 'Within 15 Mins' : '2:15 PM – 5:15 PM',
       isEmergency: orderData.deliveryType === 'Emergency',
-      deliveryOtp: otp,
       paymentMethod: orderData.paymentMethod || 'COD',
       paymentStatus: orderData.paymentStatus || (orderData.paymentMethod?.includes('Online') || orderData.paymentMethod?.includes('UPI') ? (orderData.isUpiApproved ? 'Paid' : 'Pending Verification') : 'Unpaid'),
       upiId: orderData.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl',
@@ -495,6 +492,7 @@ export const StoreProvider = ({ children }) => {
         isAdminOrStaff,
         isLoginOpen,
         setIsLoginOpen,
+        loginDirect,
         loginWithOtp,
         logout,
         savedAddresses,

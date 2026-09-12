@@ -912,6 +912,37 @@ export default function CheckoutView() {
           </div>
         </div>
 
+        {/* Sticky Mobile Checkout Action Bar */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-paper/95 backdrop-blur-md border-t border-hairline p-3 px-4 flex items-center justify-between shadow-2xl safe-area-bottom">
+          <div>
+            <span className="text-[10px] text-ink-soft block uppercase font-bold tracking-wider">Total Payable</span>
+            <span className="font-mono text-lg font-bold text-forest">₹{grandTotal}</span>
+          </div>
+          <button
+            type="submit"
+            disabled={cart.length === 0 || isSubmittingOrder}
+            className={`py-3 px-6 rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 ${
+              isSubmittingOrder
+                ? 'bg-forest text-paper cursor-wait'
+                : deliveryType === 'Emergency'
+                ? 'bg-kumkum text-paper'
+                : 'bg-saffron-gradient text-ink'
+            }`}
+          >
+            {isSubmittingOrder ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Placing...</span>
+              </>
+            ) : (
+              <>
+                <span>Place Order</span>
+                <CheckCircle2 className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </div>
+
       </form>
 
       {/* FULLSCREEN QR CODE MODAL */}

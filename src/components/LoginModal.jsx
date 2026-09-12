@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { X, Phone, Lock, CheckCircle2, MapPin, User, ShieldCheck, Store, Truck } from 'lucide-react';
+import { X, Phone, CheckCircle2, MapPin, User, ShieldCheck, Store, Truck } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function LoginModal() {
   const {
     isLoginOpen,
     setIsLoginOpen,
-    loginWithOtp,
+    loginDirect,
     isLoggedIn,
     userName,
     userPhone,
@@ -16,10 +16,8 @@ export default function LoginModal() {
     setActiveView
   } = useStore();
 
-  const [step, setStep] = useState('phone'); // 'phone' | 'otp'
   const [phone, setPhone] = useState(userPhone || '');
   const [name, setName] = useState(userName || '');
-  const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
 
   if (!isLoginOpen) return null;
@@ -27,14 +25,10 @@ export default function LoginModal() {
   const handleClose = () => {
     setIsLoginOpen(false);
     setError('');
-    if (!isLoggedIn) {
-      setStep('phone');
-      setOtp('');
-    }
   };
 
-  const handleSendOtp = (e) => {
-    e.preventDefault();
+  const handleDirectLogin = (e) => {
+    e?.preventDefault();
     setError('');
     const digits = phone.replace(/\D/g, '');
     if (digits.length < 10) {
@@ -45,40 +39,31 @@ export default function LoginModal() {
       setError('Please enter your full name.');
       return;
     }
-    setStep('otp');
-  };
-
-  const handleVerifyOtp = (e) => {
-    e.preventDefault();
-    setError('');
-    const finalOtp = otp.trim() || '1234';
-    if (finalOtp.length >= 4) {
-      loginWithOtp(phone, name);
-      setStep('phone');
-      setOtp('');
-    } else {
-      setError('Please enter a valid OTP code (e.g. 1234).');
-    }
+    loginDirect(phone, name);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs animate-fade-in">
-      <div className="relative w-full max-w-md bg-paper border border-hairline rounded-crate p-6 shadow-2xl space-y-5 animate-scale-up">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-xs animate-fade-in">
+      <div className="relative w-full max-w-md bg-paper border border-hairline rounded-t-3xl sm:rounded-crate max-sm:border-b-0 p-5 sm:p-6 shadow-2xl space-y-4 animate-scale-up max-sm:animate-slide-up max-h-[90vh] overflow-y-auto">
+
+        {/* Mobile Swipe / Drag Indicator */}
+        <div className="w-12 h-1 bg-ink/20 rounded-full mx-auto sm:hidden mb-1" />
 
         {/* Close Button */}
         <button
           onClick={handleClose}
           className="absolute top-4 right-4 p-2 bg-cardcream text-ink-soft hover:text-ink rounded-full border border-hairline transition-colors"
+          title="Close"
         >
           <X className="w-4 h-4" />
         </button>
 
         {isLoggedIn ? (
           /* Profile & Session View */
-          <div className="space-y-4 pt-2">
+          <div className="space-y-4 pt-1">
             <div className="flex items-center gap-3 p-3.5 bg-cardcream rounded-2xl border border-hairline">
-              <div className="w-12 h-12 rounded-xl bg-forest text-paper flex items-center justify-center font-bold text-lg font-serif">
-                {(userName || 'U').charAt(0)}
+              <div className="w-12 h-12 rounded-xl bg-forest text-paper flex items-center justify-center font-bold text-lg font-serif shrink-0">
+                {(userName || 'U').charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -91,7 +76,7 @@ export default function LoginModal() {
                 </div>
                 <p className="text-xs text-ink-soft font-mono">+91 {userPhone}</p>
                 <span className="text-[10px] text-forest font-semibold">
-                  {isAdminOrStaff ? '✓ Full Management & Rider Privileges' : 'Verified Customer'}
+                  {isAdminOrStaff ? '✓ Full Management & Rider Privileges' : '✓ Verified Customer'}
                 </span>
               </div>
             </div>
@@ -101,7 +86,7 @@ export default function LoginModal() {
               <div className="p-3 bg-forest/10 border border-forest/20 rounded-xl space-y-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-forest">
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Administrative Shortcuts</span>
+                  <span>Management Portals</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -133,13 +118,13 @@ export default function LoginModal() {
                 <MapPin className="w-3.5 h-3.5 text-forest" />
                 <span>Saved Delivery Addresses</span>
               </h4>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
+              <div className="space-y-2 max-h-36 overflow-y-auto">
                 {savedAddresses.map((addr) => (
                   <div key={addr.id} className="p-3 bg-cardcream/60 border border-hairline rounded-xl text-xs space-y-1">
                     <span className="font-bold text-forest bg-forest/10 px-2 py-0.5 rounded text-[10px]">
                       {addr.tag}
                     </span>
-                    <p className="text-ink-soft">{addr.address}</p>
+                    <p className="text-ink-soft leading-snug">{addr.address}</p>
                   </div>
                 ))}
               </div>
@@ -152,19 +137,19 @@ export default function LoginModal() {
               Sign Out Account
             </button>
           </div>
-        ) : step === 'phone' ? (
-          /* Step 1: Phone Number Input */
-          <form onSubmit={handleSendOtp} className="space-y-4 pt-2">
+        ) : (
+          /* Instant 1-Step Direct Sign-in Form */
+          <form onSubmit={handleDirectLogin} className="space-y-4 pt-1">
             <div className="text-center space-y-1">
               <div className="w-12 h-12 bg-forest/10 text-forest rounded-2xl flex items-center justify-center mx-auto mb-2 border border-forest/20">
                 <Phone className="w-6 h-6" />
               </div>
-              <h2 className="font-serif font-bold text-xl text-ink">Account Login</h2>
-              <p className="text-xs text-ink-soft">Enter your details to sign in with OTP verification</p>
+              <h2 className="font-serif font-bold text-xl text-ink">Welcome to Nissi</h2>
+              <p className="text-xs text-ink-soft">Enter your details to sign in instantly (No OTP required)</p>
             </div>
 
             {error && (
-              <div className="p-2.5 bg-kumkum/10 border border-kumkum/30 rounded-xl text-xs text-kumkum text-center">
+              <div className="p-2.5 bg-kumkum/10 border border-kumkum/30 rounded-xl text-xs text-kumkum text-center font-medium">
                 {error}
               </div>
             )}
@@ -179,8 +164,8 @@ export default function LoginModal() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your full name"
-                    className="w-full pl-9 pr-3 py-2.5 bg-cardcream rounded-xl border border-hairline text-ink font-sans focus:outline-none focus:border-forest"
+                    placeholder="e.g. Kavitha Reddy"
+                    className="w-full pl-9 pr-3 py-2.5 bg-cardcream rounded-xl border border-hairline text-ink font-sans focus:outline-none focus:border-forest text-xs"
                   />
                 </div>
               </div>
@@ -195,8 +180,8 @@ export default function LoginModal() {
                     maxLength={10}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Enter 10-digit mobile number"
-                    className="w-full pl-12 pr-3 py-2.5 bg-cardcream rounded-xl border border-hairline text-ink font-mono font-bold focus:outline-none focus:border-forest"
+                    placeholder="10-digit mobile number"
+                    className="w-full pl-12 pr-3 py-2.5 bg-cardcream rounded-xl border border-hairline text-ink font-mono font-bold focus:outline-none focus:border-forest text-xs"
                   />
                 </div>
               </div>
@@ -204,71 +189,10 @@ export default function LoginModal() {
 
             <button
               type="submit"
-              className="w-full py-3 bg-saffron-gradient text-ink font-bold rounded-xl text-xs shadow-md hover:brightness-105 transition-all"
-            >
-              Get OTP Verification Code
-            </button>
-          </form>
-        ) : (
-          /* Step 2: OTP Verification */
-          <form onSubmit={handleVerifyOtp} className="space-y-4 pt-2">
-            <div className="text-center space-y-1">
-              <div className="w-12 h-12 bg-saffron-base/20 text-ink rounded-2xl flex items-center justify-center mx-auto mb-2 border border-saffron-base/40">
-                <Lock className="w-6 h-6 text-saffron-base" />
-              </div>
-              <h2 className="font-serif font-bold text-xl text-ink">Verify OTP</h2>
-              <p className="text-xs text-ink-soft">Enter 4-digit code sent to +91 {phone}</p>
-            </div>
-
-            {error && (
-              <div className="p-2.5 bg-kumkum/10 border border-kumkum/30 rounded-xl text-xs text-kumkum text-center">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-semibold text-ink-soft mb-1 text-center">Enter 4-Digit Security Code</label>
-                <input
-                  type="text"
-                  required
-                  maxLength={6}
-                  placeholder="••••"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                  className="w-full text-center tracking-[0.5em] text-xl font-mono font-bold py-2.5 bg-cardcream rounded-xl border border-hairline text-forest placeholder:text-ink-soft/30 focus:outline-none focus:border-forest"
-                  autoFocus
-                />
-                <p className="text-[11px] text-center text-ink-soft/70 mt-1.5 flex items-center justify-center gap-1">
-                  <span>Demo access code:</span>
-                  <button
-                    type="button"
-                    onClick={() => setOtp('1234')}
-                    className="font-mono font-bold text-forest bg-forest/10 px-2 py-0.5 rounded text-[10px] hover:bg-forest/20 transition-colors"
-                  >
-                    1234 (Tap to Fill)
-                  </button>
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 bg-forest text-paper font-bold rounded-xl text-xs shadow-md hover:bg-forest-soft transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 bg-saffron-gradient text-ink font-bold rounded-xl text-xs shadow-md hover:brightness-105 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Verify & Continue</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setStep('phone');
-                setError('');
-              }}
-              className="w-full text-center text-xs text-ink-soft underline"
-            >
-              Change Mobile Number
+              <span>Sign In Instantly</span>
             </button>
           </form>
         )}

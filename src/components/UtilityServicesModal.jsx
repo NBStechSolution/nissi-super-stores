@@ -34,8 +34,11 @@ export default function UtilityServicesModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs animate-fade-in">
-      <div className="relative w-full max-w-lg bg-paper border border-hairline rounded-crate p-6 shadow-2xl space-y-5 animate-scale-up">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-xs animate-fade-in">
+      <div className="relative w-full max-w-lg bg-paper border border-hairline rounded-t-3xl sm:rounded-crate max-sm:border-b-0 p-5 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 animate-scale-up max-sm:animate-slide-up max-h-[92vh] overflow-y-auto safe-area-bottom">
+
+        {/* Mobile Drag Handle */}
+        <div className="w-12 h-1 bg-ink/20 rounded-full mx-auto sm:hidden mb-1" />
 
         {/* Close Button */}
         <button

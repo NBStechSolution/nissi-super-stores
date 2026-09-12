@@ -57,13 +57,13 @@ export default function CartDrawer() {
             className="fixed top-0 right-0 z-50 h-full w-full max-w-md bg-paper border-l border-hairline shadow-2xl flex flex-col justify-between"
           >
             {/* Drawer Header */}
-            <div className="p-5 border-b border-hairline bg-cardcream flex items-center justify-between">
+            <div className="p-4 sm:p-5 border-b border-hairline bg-cardcream flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 bg-forest text-paper rounded-xl shadow-xs">
                   <ShoppingBag className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="font-serif font-bold text-lg text-ink">Your Kirana Basket</h2>
+                  <h2 className="font-serif font-bold text-base sm:text-lg text-ink">Your Kirana Basket</h2>
                   <div className="flex items-center gap-2 text-[11px] text-ink-soft font-sans">
                     <span>
                       {cart.length} item{cart.length !== 1 ? 's' : ''} added

@@ -19,7 +19,7 @@ export default function CategoryRail() {
   };
 
   return (
-    <div className="w-full mb-6">
+    <div id="category-rail-section" className="w-full mb-6 scroll-mt-20">
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-lg font-serif font-semibold text-ink">
           {t('exploreCategories', language === 'te' ? 'విభాగాలు' : 'Explore Categories')}

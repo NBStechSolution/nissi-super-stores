@@ -58,11 +58,11 @@ export default function Header() {
         </div>
 
         {/* Store Status Badge & Delivery Window Pill */}
-        <div className="flex items-center gap-2 lg:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3">
           {/* Desktop & Mobile Store Status */}
           <button
             onClick={() => setIsStoreOpen(!isStoreOpen)}
-            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold border transition-all duration-200 ${
               isStoreOpen
                 ? 'bg-forest/10 border-forest/30 text-forest hover:bg-forest/20'
                 : 'bg-kumkum/10 border-kumkum/30 text-kumkum hover:bg-kumkum/20'
@@ -74,7 +74,7 @@ export default function Header() {
                 isStoreOpen ? 'bg-forest animate-pulse-emerald' : 'bg-kumkum'
               }`}
             />
-            <span>{isStoreOpen ? t('storeOpen', 'Store Open') : t('storeClosed', 'Store Closed')}</span>
+            <span className="hidden xs:inline">{isStoreOpen ? t('storeOpen', 'Open') : t('storeClosed', 'Closed')}</span>
           </button>
 
           <div className="hidden lg:flex items-center gap-1.5 px-3.5 py-1.5 bg-cardcream border border-hairline rounded-full text-xs text-ink font-medium shadow-xs">
@@ -87,41 +87,41 @@ export default function Header() {
         </div>
 
         {/* Right Actions, Language Toggle & User Login */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
 
           {/* Language Selector (English / Telugu) */}
           <button
             onClick={() => setLanguage(language === 'en' ? 'te' : 'en')}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-cardcream hover:bg-paper text-ink font-bold rounded-xl border border-hairline text-xs transition-colors"
+            className="flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-cardcream hover:bg-paper text-ink font-bold rounded-xl border border-hairline text-xs transition-colors"
             title="Switch Language / భాషను మార్చండి"
           >
             <Globe className="w-3.5 h-3.5 text-forest" />
-            <span>{language === 'en' ? 'తెలుగు' : 'English'}</span>
+            <span className="text-[11px] sm:text-xs">{language === 'en' ? 'తెలుగు' : 'EN'}</span>
           </button>
 
-          {/* Customer Login Button */}
+          {/* Customer Login Button (Desktop only, mobile has BottomNav) */}
           <button
             onClick={() => setIsLoginOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-cardcream hover:bg-paper text-ink font-semibold rounded-xl border border-hairline text-xs transition-colors"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-cardcream hover:bg-paper text-ink font-semibold rounded-xl border border-hairline text-xs transition-colors"
           >
             <User className="w-3.5 h-3.5 text-forest" />
-            <span className="hidden sm:inline">{isLoggedIn ? userName : t('login', 'Login')}</span>
+            <span>{isLoggedIn ? userName : t('login', 'Login')}</span>
           </button>
 
-          {/* View Toggle Buttons */}
+          {/* Desktop View Toggle Buttons */}
           {(activeView === 'admin' || activeView === 'staff') ? (
             <button
               onClick={() => setActiveView('home')}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-forest hover:bg-forest/90 text-paper font-bold rounded-xl shadow-xs text-xs transition-all animate-fade-in"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-forest hover:bg-forest/90 text-paper font-bold rounded-xl shadow-xs text-xs transition-all animate-fade-in"
               title="Return to Customer Storefront"
             >
               <ArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Back to Store</span>
+              <span className="text-[11px] sm:text-xs">Store</span>
             </button>
           ) : (
             <button
               onClick={() => setActiveView('home')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`hidden md:inline-flex px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 activeView === 'home'
                   ? 'bg-forest text-paper shadow-sm'
                   : 'bg-cardcream/80 text-ink-soft hover:bg-cardcream'
@@ -133,21 +133,21 @@ export default function Header() {
 
           <button
             onClick={() => setActiveView('tracking')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1 ${
+            className={`hidden md:inline-flex px-3 py-1.5 rounded-xl text-xs font-semibold transition-all items-center gap-1 ${
               activeView === 'tracking'
                 ? 'bg-forest text-paper shadow-sm'
                 : 'bg-cardcream/80 text-ink-soft hover:bg-cardcream'
             }`}
           >
             <Zap className="w-3.5 h-3.5 text-saffron-highlight" />
-            <span className="hidden sm:inline">{t('trackOrder', 'Track Order')}</span>
+            <span>{t('trackOrder', 'Track Order')}</span>
           </button>
 
           {isAdminOrStaff && (
             <>
               <button
                 onClick={() => setActiveView('staff')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                   activeView === 'staff'
                     ? 'bg-forest text-paper border-forest shadow-sm'
                     : 'bg-cardcream/60 border-hairline text-ink-soft hover:bg-cardcream'
@@ -160,7 +160,7 @@ export default function Header() {
 
               <button
                 onClick={() => setActiveView('admin')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                   activeView === 'admin'
                     ? 'bg-ink text-paper border-ink shadow-sm'
                     : 'bg-cardcream/60 border-hairline text-ink-soft hover:bg-cardcream'

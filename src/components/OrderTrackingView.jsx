@@ -356,50 +356,42 @@ export default function OrderTrackingView() {
         </div>
       </div>
 
-      {/* Handover OTP Card */}
+      {/* Delivery Handover Status Banner (No OTP) */}
       {!isCancelled && (
-        <div className="p-5 bg-cardcream border border-hairline rounded-crate flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+        <div className="p-4 sm:p-5 bg-cardcream border border-hairline rounded-crate flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-forest/10 text-forest rounded-xl shrink-0">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-serif font-bold text-sm text-ink">Delivery Handover PIN</h3>
+                <h3 className="font-serif font-bold text-sm text-ink">Doorstep Handover Status</h3>
                 {currentStatus === 'Delivered' ? (
-                  <span className="px-2 py-0.5 bg-forest/10 text-forest text-[10px] font-bold rounded-full">
-                    ✓ Handover Verified
+                  <span className="px-2.5 py-0.5 bg-forest/15 text-forest text-[11px] font-bold rounded-full">
+                    ✓ Handover Completed
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 bg-saffron-base/20 text-saffron-base text-[10px] font-bold rounded-full">
-                    Share with Rider
+                  <span className="px-2.5 py-0.5 bg-forest/10 text-forest text-[11px] font-bold rounded-full">
+                    Direct Handover (No PIN Required)
                   </span>
                 )}
               </div>
               <p className="text-xs text-ink-soft mt-0.5">
                 {currentStatus === 'Delivered'
-                  ? 'Delivery confirmed at your doorstep with verified handover PIN.'
-                  : 'Please share this 4-digit security PIN with the delivery rider to confirm receipt.'}
+                  ? 'Your groceries have been safely delivered to your doorstep.'
+                  : 'Rider will deliver directly to your address. Instant, frictionless delivery.'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 font-mono font-bold text-lg bg-paper px-3 py-2 rounded-xl border border-hairline tracking-widest text-forest shadow-xs">
-              {(activeOrder.deliveryOtp || '4829').split('').map((char, i) => (
-                <span key={i} className="w-7 h-8 bg-cardcream rounded-lg flex items-center justify-center border border-hairline shadow-inner">
-                  {char}
-                </span>
-              ))}
-            </div>
-
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             <button
               onClick={() => setIsPrintOpen(true)}
-              className="px-3 py-2 bg-paper hover:bg-cardcream text-ink border border-hairline rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+              className="px-3.5 py-2 bg-paper hover:bg-cardcream text-ink border border-hairline rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
               title="Print Order Receipt"
             >
               <Printer className="w-3.5 h-3.5 text-forest" />
-              <span>Bill</span>
+              <span>Bill / Invoice</span>
             </button>
           </div>
         </div>
@@ -426,7 +418,7 @@ export default function OrderTrackingView() {
               <p><strong>Phone:</strong> {activeOrder.phone}</p>
               <p><strong>Address:</strong> {activeOrder.address}</p>
               <p><strong>Placed:</strong> {activeOrder.placedAt}</p>
-              <p className="text-forest font-bold"><strong>DELIVERY OTP:</strong> {activeOrder.deliveryOtp || '4829'}</p>
+              <p className="text-forest font-bold"><strong>HANDOVER:</strong> Direct Doorstep Delivery</p>
             </div>
 
             <div className="space-y-1 py-1 border-b border-dashed border-gray-400 text-[11px]">

@@ -1666,9 +1666,7 @@ export default function AdminDashboard() {
               <p><strong>Phone:</strong> {printOrder.phone}</p>
               <p><strong>Address:</strong> {printOrder.address}</p>
               <p><strong>Time:</strong> {printOrder.placedAt}</p>
-              {printOrder.deliveryOtp && (
-                <p className="text-forest font-bold"><strong>HANDOVER OTP:</strong> {printOrder.deliveryOtp}</p>
-              )}
+              <p className="text-forest font-bold"><strong>HANDOVER:</strong> Direct Delivery</p>
             </div>
 
             {/* Itemized Table */}

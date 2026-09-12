@@ -180,8 +180,8 @@ export default function ProductGrid() {
         </div>
       )}
 
-      {/* Product Cards Grid with Large 2D Images & Fallback Handling */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* Product Cards Grid: 2-column on mobile, responsive up to 4-column on desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
         {filteredProducts.map((product) => {
           const cartItem = cart.find((item) => item.id === product.id);
           const cartQty = cartItem ? cartItem.quantity : 0;
@@ -201,40 +201,40 @@ export default function ProductGrid() {
             stockBadgeStyle = 'bg-kumkum/10 text-kumkum border-kumkum/30';
             isOutOfStock = true;
           } else if (product.stock <= product.lowStockThreshold) {
-            stockBadgeText = `${t('lowStock', 'Low Stock')} (${product.stock})`;
+            stockBadgeText = `${product.stock} left`;
             stockBadgeStyle = 'bg-saffron-base/20 text-ink font-bold border-saffron-base/40';
           }
 
           return (
             <div
               key={product.id}
-              className="group relative bg-cardcream border border-hairline rounded-crate p-4 flex flex-col justify-between transition-all duration-300 hover:shadow-crate-hover hover:-translate-y-1"
+              className="group relative bg-cardcream border border-hairline rounded-2xl sm:rounded-crate p-2.5 sm:p-4 flex flex-col justify-between transition-all duration-200 hover:shadow-crate-hover hover:-translate-y-0.5"
             >
               <div>
                 {/* Top Badge Rail & Favorite Button */}
-                <div className="flex items-center justify-between gap-1.5 mb-3">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center justify-between gap-1 mb-2">
+                  <div className="flex items-center gap-1 flex-wrap">
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border transition-colors duration-300 ${stockBadgeStyle}`}
+                      className={`px-1.5 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[11px] font-semibold border transition-colors ${stockBadgeStyle}`}
                     >
                       {stockBadgeText}
                     </span>
                     {discountPct > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-kumkum text-paper shadow-2xs">
+                      <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-kumkum text-paper shadow-2xs">
                         {discountPct}% OFF
                       </span>
                     )}
                   </div>
                   <button
                     onClick={() => toggleFavorite(product.id)}
-                    className="p-1.5 bg-paper/90 rounded-full border border-hairline text-ink-soft hover:text-kumkum transition-colors shrink-0"
+                    className="p-1 sm:p-1.5 bg-paper/90 rounded-full border border-hairline text-ink-soft hover:text-kumkum transition-colors shrink-0"
                     title="Toggle Favorite"
                   >
-                    <Heart className={`w-4 h-4 ${isFav ? 'fill-kumkum text-kumkum' : ''}`} />
+                    <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-kumkum text-kumkum' : ''}`} />
                   </button>
                 </div>
 
-                {/* Large 2D High-Res Product Image Container */}
+                {/* 2D High-Res Product Image Container */}
                 <div
                   onClick={() => {
                     if (product.isUtility) {
@@ -243,7 +243,7 @@ export default function ProductGrid() {
                       setSelectedProduct(product);
                     }
                   }}
-                  className="w-full h-48 rounded-2xl flex items-center justify-center p-3 mb-3 cursor-pointer relative overflow-hidden transition-transform group-hover:scale-[1.02] border border-hairline/40 shadow-xs"
+                  className="w-full h-28 sm:h-44 rounded-xl sm:rounded-2xl flex items-center justify-center p-2 mb-2 sm:mb-3 cursor-pointer relative overflow-hidden transition-transform group-hover:scale-[1.02] border border-hairline/40 shadow-xs"
                   style={{ backgroundColor: product.imageBg || '#F5F5F0' }}
                 >
                   {product.image2D && !isImgFailed ? (
@@ -251,55 +251,53 @@ export default function ProductGrid() {
                       src={product.image2D}
                       alt={product.name}
                       onError={() => handleImageError(product.id)}
-                      className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-full object-cover rounded-lg sm:rounded-xl transition-transform duration-300 group-hover:scale-105"
                       loading="lazy"
                     />
                   ) : (
-                    <div className="text-6xl drop-shadow-sm select-none">
+                    <div className="text-4xl sm:text-6xl drop-shadow-sm select-none">
                       {product.fallbackEmoji || '🌾'}
                     </div>
                   )}
 
                   {product.isUtility && (
-                    <div className="absolute inset-0 bg-ink/30 backdrop-blur-xs flex items-center justify-center text-paper font-bold text-xs p-2 text-center">
-                      <span>Click to Pay Bill / Recharge</span>
+                    <div className="absolute inset-0 bg-ink/30 backdrop-blur-xs flex items-center justify-center text-paper font-bold text-[10px] sm:text-xs p-1 text-center">
+                      <span>Pay Bill / Recharge</span>
                     </div>
                   )}
                 </div>
 
-                {/* Product Title (English / Telugu) & Description */}
+                {/* Product Title & Unit */}
                 <h3
                   onClick={() => setSelectedProduct(product)}
-                  className="font-serif font-bold text-base text-ink mb-1 group-hover:text-forest transition-colors cursor-pointer line-clamp-1"
+                  className="font-serif font-bold text-xs sm:text-base text-ink mb-0.5 group-hover:text-forest transition-colors cursor-pointer line-clamp-1"
                 >
                   {language === 'te' && product.nameTe ? product.nameTe : product.name}
                 </h3>
-                <p className="text-xs text-ink-soft font-sans mb-3 line-clamp-2 leading-relaxed">
+                <span className="text-[10px] sm:text-xs text-ink-soft font-sans font-medium block mb-1">
+                  {product.unit}
+                </span>
+                <p className="hidden sm:block text-xs text-ink-soft font-sans mb-3 line-clamp-2 leading-relaxed">
                   {product.description}
                 </p>
               </div>
 
-              {/* Price & Cart Actions */}
-              <div className="pt-3 border-t border-hairline/70 flex items-center justify-between gap-2 mt-2">
+              {/* Price & Cart Stepper Actions */}
+              <div className="pt-2 border-t border-hairline/60 flex items-center justify-between gap-1 mt-1">
                 <div>
                   {product.isUtility ? (
-                    <span className="font-serif font-bold text-sm text-forest">0% Fee</span>
+                    <span className="font-serif font-bold text-xs sm:text-sm text-forest">0% Fee</span>
                   ) : (
-                    <>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="font-serif font-bold text-lg text-ink">
-                          ₹{product.price}
-                        </span>
-                        {product.mrp > product.price && (
-                          <span className="text-xs text-ink-soft/40 line-through">
-                            ₹{product.mrp}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-ink-soft block">
-                        {product.unit}
+                    <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5 leading-tight">
+                      <span className="font-serif font-bold text-sm sm:text-lg text-ink">
+                        ₹{product.price}
                       </span>
-                    </>
+                      {product.mrp > product.price && (
+                        <span className="text-[10px] sm:text-xs text-ink-soft/40 line-through">
+                          ₹{product.mrp}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -307,48 +305,50 @@ export default function ProductGrid() {
                 {product.isUtility ? (
                   <button
                     onClick={() => openUtilityModal(product.utilityType)}
-                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-forest text-paper hover:bg-forest-soft transition-all flex items-center gap-1"
+                    className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold bg-forest text-paper hover:bg-forest-soft transition-all flex items-center gap-1 shrink-0"
                   >
-                    <Zap className="w-3.5 h-3.5 text-saffron-highlight" /> Pay Now
+                    <Zap className="w-3 h-3 text-saffron-highlight" /> Pay
                   </button>
                 ) : isOutOfStock ? (
                   <button
                     disabled
-                    className="px-3 py-2 bg-kumkum/10 text-kumkum opacity-60 rounded-xl text-xs font-semibold border border-kumkum/20 cursor-not-allowed"
+                    className="px-2 sm:px-3 py-1.5 sm:py-2 bg-kumkum/10 text-kumkum opacity-60 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-semibold border border-kumkum/20 cursor-not-allowed shrink-0"
                   >
-                    {t('outOfStock', 'Out of Stock')}
+                    {t('outOfStock', 'Sold Out')}
                   </button>
                 ) : cartQty > 0 ? (
-                  <div className="flex items-center bg-forest text-paper rounded-xl shadow-sm overflow-hidden p-0.5 border border-hairline">
+                  <div className="flex items-center bg-forest text-paper rounded-lg sm:rounded-xl shadow-xs overflow-hidden p-0.5 border border-hairline shrink-0">
                     <button
                       onClick={() => updateCartQuantity(product.id, -1)}
-                      className="p-1.5 hover:bg-forest-soft transition-colors"
+                      className="p-1 sm:p-1.5 hover:bg-forest-soft active:scale-95 transition-all"
+                      aria-label="Decrease quantity"
                     >
-                      <Minus className="w-3.5 h-3.5" />
+                      <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
-                    <span className="px-2 text-xs font-bold font-mono">
+                    <span className="px-1.5 sm:px-2 text-[11px] sm:text-xs font-bold font-mono min-w-[16px] text-center">
                       {cartQty}
                     </span>
                     <button
                       onClick={() => updateCartQuantity(product.id, 1)}
-                      className="p-1.5 hover:bg-forest-soft transition-colors"
+                      className="p-1 sm:p-1.5 hover:bg-forest-soft active:scale-95 transition-all"
                       disabled={cartQty >= product.stock}
+                      aria-label="Increase quantity"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => addToCart(product)}
                     disabled={!isStoreOpen}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                    className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 shadow-xs active:scale-95 shrink-0 ${
                       isStoreOpen
                         ? 'bg-saffron-gradient hover:brightness-105 text-ink'
                         : 'bg-ink/10 text-ink-soft/40 cursor-not-allowed'
                     }`}
                   >
-                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>{t('addToCart', 'Add to cart')}</span>
+                    <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" />
+                    <span>{t('addToCart', 'ADD')}</span>
                   </button>
                 )}
               </div>

@@ -11,6 +11,7 @@ import CheckoutView from './components/CheckoutView';
 import OrderTrackingView from './components/OrderTrackingView';
 import LoginModal from './components/LoginModal';
 import UtilityServicesModal from './components/UtilityServicesModal';
+import BottomNav from './components/BottomNav';
 
 // Code-split heavy administrative and rider portals for faster initial customer storefront load
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
@@ -20,7 +21,7 @@ function MainContent() {
   const { activeView, setActiveView, isHolidayClosed, holidayReason, isAdminOrStaff, setIsLoginOpen, storeAnnouncement } = useStore();
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8">
 
       {/* Holiday Store Closed Notice */}
       {isHolidayClosed && (
@@ -121,8 +122,11 @@ export default function App() {
           <MainContent />
         </div>
 
+        {/* Mobile Quick-Commerce Bottom Navigation & Floating Cart */}
+        <BottomNav />
+
         {/* Footer */}
-        <footer className="border-t border-hairline bg-cardcream/60 py-6 mt-12 text-xs text-ink-soft">
+        <footer className="border-t border-hairline bg-cardcream/60 py-6 mt-12 mb-16 md:mb-0 text-xs text-ink-soft">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
             <div className="flex items-center gap-3">
               <img

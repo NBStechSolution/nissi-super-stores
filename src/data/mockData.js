@@ -341,7 +341,6 @@ export const INITIAL_ORDERS = [
     placedAt: '10:14 AM Today',
     deliveryWindow: 'Within 15 Mins',
     isEmergency: true,
-    deliveryOtp: '4829',
     assignedRider: 'Raju M. (+91 91234 56789)',
     paymentMethod: 'UPI Online (abicharan07@axl • Ref: TXN-89421)'
   },
@@ -362,7 +361,6 @@ export const INITIAL_ORDERS = [
     placedAt: '09:45 AM Today',
     deliveryWindow: '2:15 PM – 5:15 PM',
     isEmergency: false,
-    deliveryOtp: '7193',
     assignedRider: 'Srinivas K. (+91 98765 43210)'
   }
 ];
