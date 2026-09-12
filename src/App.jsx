@@ -7,13 +7,13 @@ import CategoryRail from './components/CategoryRail';
 import ProductGrid from './components/ProductGrid';
 import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
-import CheckoutView from './components/CheckoutView';
-import OrderTrackingView from './components/OrderTrackingView';
 import LoginModal from './components/LoginModal';
 import UtilityServicesModal from './components/UtilityServicesModal';
 import BottomNav from './components/BottomNav';
 
-// Code-split heavy administrative and rider portals for faster initial customer storefront load
+// Code-split heavy views for fastest initial customer storefront load
+const CheckoutView = lazy(() => import('./components/CheckoutView'));
+const OrderTrackingView = lazy(() => import('./components/OrderTrackingView'));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const DeliveryStaffView = lazy(() => import('./components/DeliveryStaffView'));
 
@@ -71,8 +71,17 @@ function MainContent() {
         </div>
       )}
 
-      {activeView === 'checkout' && <CheckoutView />}
-      {activeView === 'tracking' && <OrderTrackingView />}
+      <Suspense
+        fallback={
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="w-8 h-8 border-3 border-forest/30 border-t-forest rounded-full animate-spin" />
+            <span className="text-xs font-bold text-ink-soft">Loading view...</span>
+          </div>
+        }
+      >
+        {activeView === 'checkout' && <CheckoutView />}
+        {activeView === 'tracking' && <OrderTrackingView />}
+      </Suspense>
 
       {/* Access Protection: Restricted strictly to authorized store management */}
       {(activeView === 'admin' || activeView === 'staff') && !isAdminOrStaff && (

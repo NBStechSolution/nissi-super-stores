@@ -40,11 +40,67 @@ export async function fetchProductsFromSupabase() {
 }
 
 /**
+ * Fetch all orders from Supabase 'orders' table
+ */
+export async function fetchOrdersFromSupabase() {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('Supabase orders fetch warning:', error.message);
+      return null;
+    }
+    if (data && data.length > 0) {
+      return data.map((row) => ({
+        id: row.id,
+        customerName: row.customer_name,
+        phone: row.phone,
+        address: row.address,
+        items: row.items || [],
+        subtotal: Number(row.subtotal || 0),
+        discountAmount: Number(row.discount_amount || 0),
+        appliedCoupon: row.applied_coupon,
+        deliveryFee: Number(row.delivery_fee || 0),
+        totalAmount: Number(row.total_amount || 0),
+        deliveryType: row.delivery_type,
+        status: row.status,
+        placedAt: row.created_at ? new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today',
+        deliveryWindow: row.delivery_window || 'Within 15 Mins',
+        isEmergency: Boolean(row.is_emergency),
+        paymentMethod: row.payment_method || 'COD',
+        paymentStatus: row.payment_status || 'Unpaid',
+        upiId: row.upi_id || 'abicharan07@axl',
+        utr: row.utr || '',
+        paymentProof: row.payment_proof || null,
+        assignedRider: row.assigned_rider || 'Raju M. (+91 91234 56789)',
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+    }
+    return [];
+  } catch (err) {
+    console.warn('Supabase orders fetch error:', err);
+    return null;
+  }
+}
+
+/**
  * Save new order to Supabase 'orders' table
  */
 export async function saveOrderToSupabase(order) {
   if (!isSupabaseConfigured || !supabase) return false;
   try {
+    let paymentProof = order.paymentProof || null;
+    // Guard against oversized base64 payloads breaking Supabase REST limits
+    if (typeof paymentProof === 'string' && paymentProof.length > 800000) {
+      console.warn('Payment proof image is large; saving order record without inline payload');
+      paymentProof = null;
+    }
+
     const row = {
       id: order.id,
       customer_name: order.customerName,
@@ -64,7 +120,7 @@ export async function saveOrderToSupabase(order) {
       payment_status: order.paymentStatus,
       upi_id: order.upiId,
       utr: order.utr || '',
-      payment_proof: order.paymentProof || null,
+      payment_proof: paymentProof,
       assigned_rider: order.assignedRider || 'Raju M. (+91 91234 56789)',
       created_at: new Date().toISOString()
     };

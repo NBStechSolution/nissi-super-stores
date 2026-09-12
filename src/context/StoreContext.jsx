@@ -3,6 +3,7 @@ import { INITIAL_PRODUCTS, INITIAL_ORDERS, TELUGU_TRANSLATIONS } from '../data/m
 import { ADMIN_PHONE, ADMIN_NAME, PAYMENT_CONFIG } from '../data/paymentConfig';
 import {
   fetchProductsFromSupabase,
+  fetchOrdersFromSupabase,
   saveOrderToSupabase,
   updateOrderStatusInSupabase,
   updateOrderPaymentInSupabase,
@@ -538,6 +539,22 @@ export const StoreProvider = ({ children }) => {
         } catch (e) {
           console.warn('Could not cache remote products:', e);
         }
+      }
+    });
+
+    fetchOrdersFromSupabase().then((remoteOrders) => {
+      if (remoteOrders && remoteOrders.length > 0) {
+        setOrders((prev) => {
+          const remoteIds = new Set(remoteOrders.map((o) => o.id));
+          const localOnly = prev.filter((o) => !remoteIds.has(o.id));
+          const merged = [...remoteOrders, ...localOnly];
+          try {
+            localStorage.setItem('nissi_orders_v1', JSON.stringify(merged));
+          } catch (e) {
+            console.warn('Could not cache merged orders:', e);
+          }
+          return merged;
+        });
       }
     });
 
