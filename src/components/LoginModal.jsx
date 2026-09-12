@@ -43,8 +43,14 @@ export default function LoginModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-xs animate-fade-in">
-      <div className="relative w-full max-w-md bg-paper border border-hairline rounded-t-3xl sm:rounded-crate max-sm:border-b-0 p-5 sm:p-6 shadow-2xl space-y-4 animate-scale-up max-sm:animate-slide-up max-h-[90vh] overflow-y-auto">
+    <div
+      onClick={handleClose}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-xs animate-fade-in"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md bg-paper border border-hairline rounded-t-3xl sm:rounded-crate max-sm:border-b-0 p-5 sm:p-6 shadow-2xl space-y-4 animate-scale-up max-sm:animate-slide-up max-h-[90vh] overflow-y-auto pb-safe"
+      >
 
         {/* Mobile Swipe / Drag Indicator */}
         <div className="w-12 h-1 bg-ink/20 rounded-full mx-auto sm:hidden mb-1" />

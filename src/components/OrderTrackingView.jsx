@@ -12,7 +12,8 @@ import {
   CheckCircle2,
   QrCode,
   X,
-  Loader2
+  Loader2,
+  MessageSquare
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStore } from '../context/StoreContext';
@@ -170,6 +171,17 @@ export default function OrderTrackingView() {
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Re-order</span>
           </button>
+
+          <a
+            href={`https://wa.me/919989069151?text=${encodeURIComponent(`Hi Nissi Super Stores! I am tracking my order #${activeOrder.id} for ${activeOrder.customerName}.`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 bg-forest/10 hover:bg-forest/20 text-forest font-bold rounded-xl text-xs border border-forest/30 transition-colors flex items-center gap-1.5"
+            title="Chat with Nissi Super Stores Support on WhatsApp"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>WhatsApp Support</span>
+          </a>
         </div>
       </div>
 

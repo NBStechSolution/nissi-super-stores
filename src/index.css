@@ -120,11 +120,13 @@
 }
 
 /* Mobile Safe Area and Utility Classes */
-.pb-safe {
+.pb-safe,
+.safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.pt-safe {
+.pt-safe,
+.safe-area-top {
   padding-top: env(safe-area-inset-top, 0px);
 }
 

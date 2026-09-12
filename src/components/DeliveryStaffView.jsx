@@ -5,13 +5,13 @@ import {
   Phone,
   CheckCircle2,
   Zap,
-  ShieldCheck,
   Printer,
   X,
   Navigation,
   ArrowLeft,
   Store,
-  QrCode
+  QrCode,
+  MessageSquare
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -156,12 +156,20 @@ export default function DeliveryStaffView() {
                     </p>
                   </div>
 
-                  <div className="flex sm:justify-end items-center gap-3">
+                  <div className="flex sm:justify-end items-center gap-2 flex-wrap">
                     <a
                       href={`tel:${ord.phone}`}
                       className="px-3 py-2 bg-cardcream hover:bg-hairline/60 rounded-xl font-semibold flex items-center gap-1.5 text-ink transition-colors"
                     >
-                      <Phone className="w-3.5 h-3.5 text-forest" /> Call Customer
+                      <Phone className="w-3.5 h-3.5 text-forest" /> Call
+                    </a>
+                    <a
+                      href={`https://wa.me/91${ord.phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(`Hello ${ord.customerName}! I am your delivery rider from Nissi Super Stores with your order #${ord.id}.`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2 bg-forest/10 hover:bg-forest/20 text-forest font-bold rounded-xl flex items-center gap-1.5 transition-colors border border-forest/30"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" /> WhatsApp
                     </a>
                     <a
                       href={`https://maps.google.com/?q=${encodeURIComponent(ord.address)}`}

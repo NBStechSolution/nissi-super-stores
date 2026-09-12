@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
@@ -127,7 +127,7 @@ export default function CheckoutView() {
   const [isAutoVerifying, setIsAutoVerifying] = useState(false);
   const [autoVerifyStep, setAutoVerifyStep] = useState('');
 
-  const triggerAutoPaymentSuccess = (customUtr) => {
+  const triggerAutoPaymentSuccess = useCallback((customUtr) => {
     setIsAutoVerifying(true);
     setAutoVerifyStep('Connecting to Axis Bank / NPCI gateway...');
 
@@ -163,7 +163,7 @@ export default function CheckoutView() {
         });
       }, 1200);
     }, 1500);
-  };
+  }, [grandTotal, createOrder, formData, deliveryType, activeUpiId, paymentProofImage]);
 
   const handleLaunchUpiApp = (appUrl) => {
     try {
@@ -200,7 +200,7 @@ export default function CheckoutView() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [formData, deliveryType, paymentMethod, grandTotal, activeUpiId, paymentProofImage]);
+  }, [triggerAutoPaymentSuccess]);
 
   const handleProofUpload = (e) => {
     const file = e.target.files?.[0];

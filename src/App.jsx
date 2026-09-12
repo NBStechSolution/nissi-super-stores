@@ -19,9 +19,29 @@ const DeliveryStaffView = lazy(() => import('./components/DeliveryStaffView'));
 
 function MainContent() {
   const { activeView, setActiveView, isHolidayClosed, holidayReason, isAdminOrStaff, setIsLoginOpen, storeAnnouncement } = useStore();
+  const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+
+  React.useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   return (
     <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8">
+
+      {/* Network Offline Notification Banner */}
+      {!isOnline && (
+        <div className="mb-4 p-3 bg-kumkum text-paper rounded-2xl text-xs font-semibold flex items-center justify-between shadow-md animate-fade-in">
+          <span>⚠️ You are currently offline. Orders and updates will sync automatically once reconnected.</span>
+          <span className="text-[10px] bg-paper/20 px-2.5 py-0.5 rounded-full uppercase font-bold tracking-wider">Offline</span>
+        </div>
+      )}
 
       {/* Holiday Store Closed Notice */}
       {isHolidayClosed && (
