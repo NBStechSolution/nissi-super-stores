@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --ink: #12231B;
+    --ink-soft: #3D473F;
+    --forest: #123027;
+    --forest-soft: #1B4033;
+    --saffron-base: #C6862B;
+    --saffron-highlight: #F0B94F;
+    --kumkum: #B23A30;
+    --paper: #F6F7F1;
+    --paper-warm: #F1EBDD;
+    --cardcream: #FCEEDD;
+    --hairline: #D8CDB8;
+    --mint-line: #CFE0D3;
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'Sora', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, .font-serif-display {
+    font-family: 'Fraunces', Georgia, serif;
+    font-optical-sizing: auto;
+  }
+}
+
+@theme {
+  --color-ink: #12231B;
+  --color-ink-soft: #3D473F;
+  --color-forest: #123027;
+  --color-forest-soft: #1B4033;
+  --color-saffron-base: #C6862B;
+  --color-saffron-highlight: #F0B94F;
+  --color-kumkum: #B23A30;
+  --color-paper: #F6F7F1;
+  --color-paper-warm: #F1EBDD;
+  --color-cardcream: #FCEEDD;
+  --color-hairline: #D8CDB8;
+  --color-mint-line: #CFE0D3;
+
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Sora', system-ui, -apple-system, sans-serif;
+}
+
+/* Gradients */
+.bg-saffron-gradient {
+  background: linear-gradient(135deg, #F0B94F 0%, #C6862B 100%);
+}
+
+.text-saffron-gradient {
+  background: linear-gradient(135deg, #F0B94F 0%, #C6862B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-hero-gradient {
+  background: linear-gradient(180deg, #F1EBDD 0%, #F6F7F1 60%);
+}
+
+/* Hero Raised Surface Top Highlight */
+.hero-card-highlight {
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Asymmetric organic market crate border radius */
+.rounded-crate {
+  border-radius: 20px 8px 24px 10px;
+}
+
+.rounded-crate-alt {
+  border-radius: 10px 24px 8px 20px;
+}
+
+/* Subtle produce shadows */
+.shadow-crate {
+  box-shadow: 0 10px 30px -10px rgba(18, 35, 27, 0.08), 0 4px 12px -4px rgba(18, 48, 39, 0.06);
+}
+
+.shadow-crate-hover {
+  box-shadow: 0 16px 40px -12px rgba(18, 35, 27, 0.14), 0 6px 18px -4px rgba(198, 134, 43, 0.25);
+}
+
+/* Custom smooth scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--paper);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--forest);
+}
+
+/* Pulse keyframes for live store status indicator */
+@keyframes pulse-emerald {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.15);
+  }
+}
+
+.animate-pulse-emerald {
+  animation: pulse-emerald 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

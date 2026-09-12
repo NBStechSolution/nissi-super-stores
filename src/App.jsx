@@ -1,0 +1,154 @@
+import React, { Suspense, lazy } from 'react';
+import { Lock } from 'lucide-react';
+import { StoreProvider, useStore } from './context/StoreContext';
+import Header from './components/Header';
+import Hero2D from './components/Hero2D';
+import CategoryRail from './components/CategoryRail';
+import ProductGrid from './components/ProductGrid';
+import ProductModal from './components/ProductModal';
+import CartDrawer from './components/CartDrawer';
+import CheckoutView from './components/CheckoutView';
+import OrderTrackingView from './components/OrderTrackingView';
+import LoginModal from './components/LoginModal';
+import UtilityServicesModal from './components/UtilityServicesModal';
+
+// Code-split heavy administrative and rider portals for faster initial customer storefront load
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const DeliveryStaffView = lazy(() => import('./components/DeliveryStaffView'));
+
+function MainContent() {
+  const { activeView, setActiveView, isHolidayClosed, holidayReason, isAdminOrStaff, setIsLoginOpen, storeAnnouncement } = useStore();
+
+  return (
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+      {/* Holiday Store Closed Notice */}
+      {isHolidayClosed && (
+        <div className="mb-6 p-4 bg-kumkum/10 border border-kumkum/30 text-kumkum rounded-crate text-xs font-semibold flex items-center justify-between">
+          <span>📢 Notice: Store is currently paused due to {holidayReason}. Online orders will resume shortly.</span>
+        </div>
+      )}
+
+      {/* Live Store Announcement Banner */}
+      {storeAnnouncement?.enabled && storeAnnouncement?.text && activeView === 'home' && (
+        <div className="mb-5 p-3.5 bg-forest text-paper rounded-2xl text-xs font-medium flex items-center justify-between shadow-xs animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <span className="text-base shrink-0">📢</span>
+            <span className="font-sans leading-snug">{storeAnnouncement.text}</span>
+          </div>
+          <span className="text-[10px] bg-paper/20 text-paper px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ml-3 hidden sm:inline">
+            Notice
+          </span>
+        </div>
+      )}
+
+      {activeView === 'home' && (
+        <div className="space-y-6">
+          <Hero2D />
+          <CategoryRail />
+          <ProductGrid />
+        </div>
+      )}
+
+      {activeView === 'checkout' && <CheckoutView />}
+      {activeView === 'tracking' && <OrderTrackingView />}
+
+      {/* Access Protection: Restricted strictly to authorized store management */}
+      {(activeView === 'admin' || activeView === 'staff') && !isAdminOrStaff && (
+        <div className="max-w-md mx-auto my-12 p-8 bg-cardcream border border-hairline rounded-crate text-center space-y-5 shadow-crate">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-kumkum/10 text-kumkum border border-kumkum/20 flex items-center justify-center">
+            <Lock className="w-7 h-7" />
+          </div>
+          <div>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-kumkum/10 text-kumkum border border-kumkum/20">
+              Restricted Access
+            </span>
+            <h2 className="mt-2 font-serif font-bold text-xl text-ink">
+              {activeView === 'admin' ? 'Store Admin Center' : 'Delivery Rider Portal'}
+            </h2>
+            <p className="mt-2 text-xs text-ink-soft leading-relaxed">
+              This portal is restricted to authorized store management and staff only. Please sign in with your authorized account.
+            </p>
+          </div>
+
+          <div className="pt-2 space-y-2.5">
+            <button
+              onClick={() => setIsLoginOpen(true)}
+              className="w-full py-3 bg-saffron-gradient text-ink font-bold text-xs rounded-xl shadow-sm hover:brightness-105 transition-all"
+            >
+              Sign In to Account
+            </button>
+            <button
+              onClick={() => setActiveView('home')}
+              className="w-full py-2.5 bg-paper text-ink-soft hover:text-ink font-semibold text-xs rounded-xl border border-hairline transition-colors"
+            >
+              Return to Storefront
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Authorized Staff / Admin Portal */}
+      {(activeView === 'admin' || activeView === 'staff') && isAdminOrStaff && (
+        <Suspense
+          fallback={
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <div className="w-8 h-8 border-3 border-forest/30 border-t-forest rounded-full animate-spin" />
+              <span className="text-xs font-bold text-ink-soft">Loading portal...</span>
+            </div>
+          }
+        >
+          {activeView === 'admin' && <AdminDashboard />}
+          {activeView === 'staff' && <DeliveryStaffView />}
+        </Suspense>
+      )}
+
+      {/* Global Overlays */}
+      <ProductModal />
+      <CartDrawer />
+      <LoginModal />
+      <UtilityServicesModal />
+    </main>
+  );
+}
+
+export default function App() {
+  return (
+    <StoreProvider>
+      <div className="min-h-screen bg-paper text-ink flex flex-col font-sans selection:bg-saffron-highlight selection:text-ink">
+        <Header />
+        <div className="flex-1">
+          <MainContent />
+        </div>
+
+        {/* Footer */}
+        <footer className="border-t border-hairline bg-cardcream/60 py-6 mt-12 text-xs text-ink-soft">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <div className="flex items-center gap-3">
+              <img
+                src="/logo.jpeg"
+                alt="Nissi Logo"
+                className="w-10 h-10 rounded-full object-cover shadow-xs ring-1 ring-forest/30 shrink-0"
+              />
+              <div>
+                <p className="font-serif font-semibold text-sm text-ink">Nissi Super Stores</p>
+                <p className="text-[11px] text-ink-soft/80">
+                  Kirana at Delivery Speed • Developed by <span className="font-semibold text-forest">NBS Tech Solutions</span>
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] font-medium">
+              <span className="text-forest font-bold">FREE Delivery over ₹199</span>
+              <span>•</span>
+              <span>₹10 Charge under ₹199</span>
+              <span>•</span>
+              <span>Target 15-Min Emergency Delivery</span>
+              <span>•</span>
+              <span>Telugu / English Interface</span>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </StoreProvider>
+  );
+}
