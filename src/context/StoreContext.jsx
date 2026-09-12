@@ -9,7 +9,8 @@ import {
   saveOrderToSupabase,
   updateOrderStatusInSupabase,
   updateOrderPaymentInSupabase,
-  subscribeToOrders
+  subscribeToOrders,
+  subscribeToProducts
 } from '../lib/supabaseSync';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 
@@ -457,7 +458,7 @@ export const StoreProvider = ({ children }) => {
     setActiveView((curr) => (curr === 'admin' || curr === 'staff' ? 'home' : curr));
   };
 
-  const addNewProduct = (productData) => {
+  const addNewProduct = async (productData) => {
     const newId = `prod-${Date.now()}`;
     const newProduct = {
       id: newId,
@@ -477,7 +478,7 @@ export const StoreProvider = ({ children }) => {
     };
 
     setProducts((prev) => {
-      const updated = [newProduct, ...prev];
+      const updated = [newProduct, ...prev.filter((p) => p.id !== newId)];
       try {
         localStorage.setItem('nissi_products_v1', JSON.stringify(updated));
       } catch (e) {
@@ -486,8 +487,8 @@ export const StoreProvider = ({ children }) => {
       return updated;
     });
 
-    // Asynchronously sync to Supabase database
-    saveProductToSupabase(newProduct).catch((err) =>
+    // Sync to Supabase database so live website updates immediately
+    await saveProductToSupabase(newProduct).catch((err) =>
       console.warn('Could not sync new product to Supabase:', err)
     );
 
@@ -523,7 +524,8 @@ export const StoreProvider = ({ children }) => {
     });
   };
 
-  const editProduct = (productId, updatedData) => {
+  const editProduct = async (productId, updatedData) => {
+    let savedTarget = null;
     setProducts((prev) => {
       const updated = prev.map((p) => {
         if (p.id === productId) {
@@ -535,7 +537,7 @@ export const StoreProvider = ({ children }) => {
             stock: Math.max(0, parseInt(updatedData.stock) ?? p.stock),
             lowStockThreshold: Math.max(1, parseInt(updatedData.lowStockThreshold) ?? p.lowStockThreshold)
           };
-          saveProductToSupabase(updatedProd).catch(() => {});
+          savedTarget = updatedProd;
           return updatedProd;
         }
         return p;
@@ -547,9 +549,13 @@ export const StoreProvider = ({ children }) => {
       }
       return updated;
     });
+
+    if (savedTarget) {
+      await saveProductToSupabase(savedTarget).catch(() => {});
+    }
   };
 
-  const deleteProduct = (productId) => {
+  const deleteProduct = async (productId) => {
     setProducts((prev) => {
       const updated = prev.filter((p) => p.id !== productId);
       try {
@@ -560,7 +566,7 @@ export const StoreProvider = ({ children }) => {
       return updated;
     });
     setCart((prev) => prev.filter((i) => i.id !== productId));
-    deleteProductFromSupabase(productId).catch((err) =>
+    await deleteProductFromSupabase(productId).catch((err) =>
       console.warn('Could not delete product from Supabase:', err)
     );
   };
@@ -743,18 +749,78 @@ export const StoreProvider = ({ children }) => {
     updateOrderPaymentInSupabase(orderId, newStatus, newUtr);
   };
 
-  // Supabase Initial Products Fetch & Realtime Subscription
+  // Supabase Initial Products Fetch & Realtime Subscriptions
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
     fetchProductsFromSupabase().then((remoteProducts) => {
       if (remoteProducts && remoteProducts.length > 0) {
-        setProducts(remoteProducts);
-        try {
-          localStorage.setItem('nissi_products_v1', JSON.stringify(remoteProducts));
-        } catch (e) {
-          console.warn('Could not cache remote products:', e);
-        }
+        setProducts((prev) => {
+          const remoteIds = new Set(remoteProducts.map((p) => p.id));
+          // Preserve any locally created products that aren't yet in Supabase
+          const localOnly = prev.filter((p) => p && !remoteIds.has(p.id));
+          // Sync any unsynced local products to Supabase in background
+          localOnly.forEach((localProd) => {
+            saveProductToSupabase(localProd).catch(() => {});
+          });
+          const merged = [...remoteProducts, ...localOnly];
+          try {
+            localStorage.setItem('nissi_products_v1', JSON.stringify(merged));
+          } catch (e) {
+            console.warn('Could not cache remote products:', e);
+          }
+          return merged;
+        });
+      }
+    });
+
+    const unsubscribeProducts = subscribeToProducts((payload) => {
+      if (payload?.eventType === 'DELETE' && payload?.old?.id) {
+        const deletedId = String(payload.old.id);
+        setProducts((prev) => {
+          const updated = prev.filter((p) => p.id !== deletedId);
+          try {
+            localStorage.setItem('nissi_products_v1', JSON.stringify(updated));
+          } catch (e) {
+            console.warn(e);
+          }
+          return updated;
+        });
+        setCart((prev) => prev.filter((i) => i.id !== deletedId));
+        return;
+      }
+
+      if (payload?.new) {
+        const row = payload.new;
+        const mappedProd = {
+          id: row.id,
+          name: row.name,
+          nameTe: row.name_te || row.nameTe || row.name,
+          category: row.category,
+          price: Number(row.price),
+          mrp: Number(row.mrp || row.price),
+          unit: row.unit,
+          stock: Number(row.stock),
+          lowStockThreshold: Number(row.low_stock_threshold || row.lowStockThreshold || 5),
+          badge: row.badge || '',
+          description: row.description || '',
+          image2D: row.image_2d || row.image2D || '',
+          fallbackEmoji: row.fallback_emoji || row.fallbackEmoji || '🛒',
+          imageBg: row.image_bg || row.imageBg || '#F5F5F0'
+        };
+
+        setProducts((prev) => {
+          const exists = prev.some((p) => p.id === mappedProd.id);
+          const updated = exists
+            ? prev.map((p) => (p.id === mappedProd.id ? { ...p, ...mappedProd } : p))
+            : [mappedProd, ...prev];
+          try {
+            localStorage.setItem('nissi_products_v1', JSON.stringify(updated));
+          } catch (e) {
+            console.warn(e);
+          }
+          return updated;
+        });
       }
     });
 
@@ -826,6 +892,7 @@ export const StoreProvider = ({ children }) => {
 
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
+      if (typeof unsubscribeProducts === 'function') unsubscribeProducts();
     };
   }, []);
 

@@ -48,7 +48,7 @@ export async function saveProductToSupabase(product) {
     const row = {
       id: String(product.id),
       name: product.name || 'New Product',
-      name_te: product.nameTe || '',
+      name_te: product.nameTe || product.name || '',
       category: product.category || 'grocery',
       price: Number(product.price) || 0,
       mrp: Number(product.mrp || product.price) || 0,
@@ -59,8 +59,7 @@ export async function saveProductToSupabase(product) {
       description: product.description || '',
       image_2d: product.image2D || '',
       fallback_emoji: product.fallbackEmoji || '🛒',
-      image_bg: product.imageBg || '#F5F5F0',
-      updated_at: new Date().toISOString()
+      image_bg: product.imageBg || '#F5F5F0'
     };
 
     const { error } = await supabase.from('products').upsert(row);
@@ -263,6 +262,28 @@ export function subscribeToOrders(onUpdate) {
     };
   } catch (err) {
     console.warn('Supabase realtime subscription failed:', err);
+    return () => {};
+  }
+}
+
+/**
+ * Subscribe to realtime product updates (inserts, updates, deletes)
+ */
+export function subscribeToProducts(onUpdate) {
+  if (!isSupabaseConfigured || !supabase) return () => {};
+  try {
+    const channel = supabase
+      .channel('public:products')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+        if (onUpdate) onUpdate(payload);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  } catch (err) {
+    console.warn('Supabase realtime products subscription failed:', err);
     return () => {};
   }
 }

@@ -38,6 +38,7 @@ import {
   CartesianGrid
 } from 'recharts';
 import { useStore } from '../context/StoreContext';
+import { compressImage } from '../utils/imageCompressor';
 import { SALES_TREND_DATA, CATEGORIES } from '../data/mockData';
 
 const QUICK_UNITS = ['1 kg', '500 g', '250 g', '100 g', '1 L', '500 ml', '1 Pack', '1 Pc', '6 Pcs'];
@@ -104,7 +105,7 @@ export default function AdminDashboard() {
   const [formData, setFormData] = useState(initialFormState);
   const [formError, setFormError] = useState('');
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -113,23 +114,17 @@ export default function AdminDashboard() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setFormError('Image file size must be under 5 MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setFormData((prev) => ({ ...prev, image2D: evt.target.result }));
+    try {
+      const compressed = await compressImage(file, 600, 600, 0.82);
+      setFormData((prev) => ({ ...prev, image2D: compressed }));
       setFormError('');
-    };
-    reader.onerror = () => {
-      setFormError('Could not read image file.');
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      setFormError('Could not process image file.');
+      console.warn('Image compression error:', err);
+    }
   };
 
-  const handleCreateProduct = (e) => {
+  const handleCreateProduct = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
       setFormError('Product title in English is required.');
@@ -147,7 +142,7 @@ export default function AdminDashboard() {
     }
 
     if (editingProduct) {
-      editProduct(editingProduct.id, {
+      await editProduct(editingProduct.id, {
         ...formData,
         price: priceNum,
         mrp: mrpNum,
@@ -162,7 +157,7 @@ export default function AdminDashboard() {
         isEdit: true
       });
     } else {
-      const created = addNewProduct({
+      const created = await addNewProduct({
         ...formData,
         price: priceNum,
         mrp: mrpNum,

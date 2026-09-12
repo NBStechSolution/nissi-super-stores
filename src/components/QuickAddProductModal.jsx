@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, Plus, Upload, Sparkles, CheckCircle } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { CATEGORIES } from '../data/mockData';
+import { compressImage } from '../utils/imageCompressor';
 
 export default function QuickAddProductModal() {
   const { isQuickAddOpen, setIsQuickAddOpen, addNewProduct, language } = useStore();
@@ -33,7 +34,7 @@ export default function QuickAddProductModal() {
 
   if (!isQuickAddOpen) return null;
 
-  const handleImageFile = (e) => {
+  const handleImageFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -42,23 +43,17 @@ export default function QuickAddProductModal() {
       return;
     }
 
-    if (file.size > 4 * 1024 * 1024) {
-      setFormError('Image size must be under 4 MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setFormData((prev) => ({ ...prev, image2D: evt.target.result }));
+    try {
+      const compressed = await compressImage(file, 600, 600, 0.82);
+      setFormData((prev) => ({ ...prev, image2D: compressed }));
       setFormError('');
-    };
-    reader.onerror = () => {
-      setFormError('Failed to read image file.');
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      setFormError('Failed to process image file.');
+      console.warn('Image processing error:', err);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
 
@@ -79,7 +74,7 @@ export default function QuickAddProductModal() {
       return;
     }
 
-    const created = addNewProduct({
+    const created = await addNewProduct({
       name: formData.name.trim(),
       nameTe: formData.nameTe.trim() || formData.name.trim(),
       category: formData.category,
