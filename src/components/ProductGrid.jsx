@@ -146,35 +146,38 @@ export default function ProductGrid() {
             )}
           </button>
 
-          {/* Quick Add Product Button */}
-          <button
-            type="button"
-            onClick={() => setIsQuickAddOpen(true)}
-            className="px-3 py-2.5 bg-forest text-paper hover:bg-forest/90 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold shrink-0 shadow-xs active:scale-95"
-            title="Add New Product to Storefront"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span className="hidden sm:inline">{language === 'te' ? 'సరుకు జోడించు' : 'Add Item'}</span>
-          </button>
+          {/* Store Manager Controls (Strictly Authorized Store Owner / Admin Only) */}
+          {isAdminOrStaff && (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsQuickAddOpen(true)}
+                className="px-3 py-2.5 bg-forest text-paper hover:bg-forest/90 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold shrink-0 shadow-xs active:scale-95 cursor-pointer"
+                title="Add New Product to Storefront"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span className="hidden sm:inline">{language === 'te' ? 'సరుకు జోడించు' : 'Add Item'}</span>
+              </button>
 
-          {/* Store Manager Edit/Delete Mode Toggle */}
-          <button
-            type="button"
-            onClick={() => toggleManagerMode()}
-            className={`px-2.5 py-2.5 rounded-xl transition-all flex items-center gap-1 text-xs font-bold shrink-0 border ${
-              isManagerMode
-                ? 'bg-saffron-base/20 border-saffron-base text-ink ring-2 ring-saffron-base/30'
-                : 'bg-paper border-hairline text-ink-soft hover:text-ink'
-            }`}
-            title="Toggle Store Manager Mode to Delete or Add items"
-          >
-            <Settings className={`w-3.5 h-3.5 ${isManagerMode ? 'text-forest animate-spin-slow' : 'text-ink-soft'}`} />
-            <span className="hidden md:inline">{isManagerMode ? 'Manager Mode: ON' : 'Manage'}</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => toggleManagerMode()}
+                className={`px-2.5 py-2.5 rounded-xl transition-all flex items-center gap-1 text-xs font-bold shrink-0 border cursor-pointer ${
+                  isManagerMode
+                    ? 'bg-saffron-base/20 border-saffron-base text-ink ring-2 ring-saffron-base/30'
+                    : 'bg-paper border-hairline text-ink-soft hover:text-ink'
+                }`}
+                title="Toggle Store Manager Mode to Delete or Add items"
+              >
+                <Settings className={`w-3.5 h-3.5 ${isManagerMode ? 'text-forest animate-spin-slow' : 'text-ink-soft'}`} />
+                <span className="hidden md:inline">{isManagerMode ? 'Manager Mode: ON' : 'Manage'}</span>
+              </button>
+            </>
+          )}
         </div>
         <div className="text-xs text-ink-soft font-medium px-1 sm:px-2 shrink-0 flex items-center gap-2">
           <span>Showing <span className="text-forest font-bold">{filteredProducts.length}</span> fresh items</span>
-          {isManagerMode && (
+          {isAdminOrStaff && isManagerMode && (
             <span className="text-[10px] bg-forest/15 text-forest font-bold px-2 py-0.5 rounded-full border border-forest/20">
               ● Edit & Delete Enabled
             </span>
@@ -266,14 +269,14 @@ export default function ProductGrid() {
                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    {(isManagerMode || isAdminOrStaff) && !product.isUtility && (
+                    {isAdminOrStaff && isManagerMode && !product.isUtility && (
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setProductToDelete(product);
                         }}
-                        className="p-1.5 bg-kumkum/10 hover:bg-kumkum/25 text-kumkum rounded-full border border-kumkum/30 transition-colors"
+                        className="p-1.5 bg-kumkum/10 hover:bg-kumkum/25 text-kumkum rounded-full border border-kumkum/30 transition-colors cursor-pointer"
                         title="Delete Product from Store"
                       >
                         <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />

@@ -207,8 +207,8 @@ export default function ProductModal() {
           </button>
         )}
 
-        {/* Store Manager Direct Delete Action */}
-        {(isManagerMode || isAdminOrStaff) && !selectedProduct.isUtility && (
+        {/* Store Manager Direct Delete Action (Admin Only) */}
+        {isAdminOrStaff && isManagerMode && !selectedProduct.isUtility && (
           <button
             type="button"
             onClick={() => setProductToDelete(selectedProduct)}

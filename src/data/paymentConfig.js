@@ -1,5 +1,6 @@
 export const ADMIN_PHONE = '9966712681';
 export const ADMIN_NAME = 'abhi naidu';
+export const ADMIN_SECURITY_PIN = '9966';
 
 export const PAYMENT_CONFIG = {
   upiId: 'abicharan07@axl',

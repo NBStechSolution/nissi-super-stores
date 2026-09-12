@@ -34,6 +34,7 @@ export default function OrderTrackingView() {
     addToCart,
     setIsCartOpen,
     setActiveView,
+    isAdminOrStaff,
     PAYMENT_CONFIG
   } = useStore();
   const [isPrintOpen, setIsPrintOpen] = useState(false);
@@ -155,46 +156,69 @@ export default function OrderTrackingView() {
         </div>
       </div>
 
-      {/* Interactive Timeline Step Simulator Control Bar */}
-      <div className="bg-forest/10 border border-forest/20 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-forest">Live Status Simulator:</span>
-          <span className="px-2.5 py-1 bg-paper text-ink rounded-lg font-mono font-semibold border border-hairline">
-            Current: {currentStatus}
-          </span>
-          <span className="text-[11px] text-ink-soft hidden md:inline">
-            • Expected: {activeOrder.isEmergency ? '15 mins from dispatch' : activeOrder.deliveryWindow}
-          </span>
+      {/* Interactive Timeline Step Simulator Control Bar (Staff / Admin Only) or Clean Customer Status Bar */}
+      {isAdminOrStaff ? (
+        <div className="bg-forest/10 border border-forest/20 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-forest">Live Status Simulator (Admin):</span>
+            <span className="px-2.5 py-1 bg-paper text-ink rounded-lg font-mono font-semibold border border-hairline">
+              Current: {currentStatus}
+            </span>
+            <span className="text-[11px] text-ink-soft hidden md:inline">
+              • Expected: {activeOrder.isEmergency ? '15 mins from dispatch' : activeOrder.deliveryWindow}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleNextStep}
+              className="px-3.5 py-1.5 bg-forest hover:bg-forest-soft text-paper rounded-xl font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+            >
+              <Play className="w-3.5 h-3.5 fill-paper" />
+              <span>Advance Status</span>
+            </button>
+            {!isCancelled && (
+              <button
+                onClick={handleCancelOrder}
+                disabled={!canCancelOrder}
+                title={
+                  canCancelOrder
+                    ? 'Cancel order before packing starts'
+                    : 'Cannot cancel once order is packed or out for delivery'
+                }
+                className={`px-3.5 py-1.5 rounded-xl font-semibold border transition-all flex items-center gap-1 ${
+                  canCancelOrder
+                    ? 'bg-kumkum/10 hover:bg-kumkum/20 text-kumkum border-kumkum/30 cursor-pointer active:scale-95'
+                    : 'bg-paper text-ink-soft/40 border-hairline cursor-not-allowed opacity-60'
+                }`}
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>{canCancelOrder ? 'Cancel Order' : 'Cannot Cancel (Packed)'}</span>
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleNextStep}
-            className="px-3.5 py-1.5 bg-forest hover:bg-forest-soft text-paper rounded-xl font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95"
-          >
-            <Play className="w-3.5 h-3.5 fill-paper" />
-            <span>Advance Status</span>
-          </button>
-          {!isCancelled && (
+      ) : (
+        <div className="bg-cardcream/80 border border-hairline p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-forest">Order Status:</span>
+            <span className="px-2.5 py-1 bg-paper text-ink font-bold rounded-lg border border-hairline">
+              {currentStatus}
+            </span>
+            <span className="text-[11px] text-ink-soft">
+              • Estimated Delivery: {activeOrder.isEmergency ? 'Within 15 Mins' : activeOrder.deliveryWindow}
+            </span>
+          </div>
+          {!isCancelled && canCancelOrder && (
             <button
               onClick={handleCancelOrder}
-              disabled={!canCancelOrder}
-              title={
-                canCancelOrder
-                  ? 'Cancel order before packing starts'
-                  : 'Cannot cancel once order is packed or out for delivery'
-              }
-              className={`px-3.5 py-1.5 rounded-xl font-semibold border transition-all flex items-center gap-1 ${
-                canCancelOrder
-                  ? 'bg-kumkum/10 hover:bg-kumkum/20 text-kumkum border-kumkum/30 cursor-pointer active:scale-95'
-                  : 'bg-paper text-ink-soft/40 border-hairline cursor-not-allowed opacity-60'
-              }`}
+              className="px-3 py-1.5 rounded-xl font-semibold border border-kumkum/30 bg-kumkum/10 hover:bg-kumkum/20 text-kumkum transition-all flex items-center gap-1 cursor-pointer"
             >
               <XCircle className="w-3.5 h-3.5" />
-              <span>{canCancelOrder ? 'Cancel Order' : 'Cannot Cancel (Packed)'}</span>
+              <span>Cancel Order</span>
             </button>
           )}
         </div>
-      </div>
+      )}
 
       {/* Main Horizontal Timeline Card */}
       <div className="bg-cardcream border border-hairline rounded-2xl sm:rounded-crate p-4 sm:p-8 shadow-md space-y-6 sm:space-y-8">

@@ -20,8 +20,7 @@ export default function Header() {
     setIsLoginOpen,
     storeAnnouncement,
     openSubscriptionModal,
-    subscriptions,
-    toggleManagerMode
+    subscriptions
   } = useStore();
 
   return (
@@ -159,8 +158,8 @@ export default function Header() {
             <span>{t('trackOrder', 'Track Order')}</span>
           </button>
 
-          {/* Admin / Store Manager Portal Access */}
-          {isAdminOrStaff ? (
+          {/* Admin / Store Manager Portal Access - Strictly Authorized */}
+          {isAdminOrStaff && (
             <>
               <button
                 onClick={() => setActiveView('staff')}
@@ -188,18 +187,6 @@ export default function Header() {
                 <span className="hidden md:inline">{t('admin', 'Admin')}</span>
               </button>
             </>
-          ) : (
-            <button
-              onClick={() => {
-                toggleManagerMode(true);
-                setActiveView('admin');
-              }}
-              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs font-semibold border border-hairline bg-cardcream hover:bg-paper text-ink-soft hover:text-ink transition-all flex items-center gap-1.5 shadow-xs"
-              title="Enter Store Management & Add/Delete Items"
-            >
-              <Store className="w-3.5 h-3.5 text-forest" />
-              <span>Admin</span>
-            </button>
           )}
 
           {/* Cart Drawer Trigger */}

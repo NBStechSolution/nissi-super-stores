@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { INITIAL_PRODUCTS, INITIAL_ORDERS, TELUGU_TRANSLATIONS } from '../data/mockData';
-import { ADMIN_PHONE, ADMIN_NAME, PAYMENT_CONFIG } from '../data/paymentConfig';
+import { ADMIN_PHONE, ADMIN_SECURITY_PIN, PAYMENT_CONFIG } from '../data/paymentConfig';
 import {
   fetchProductsFromSupabase,
   saveProductToSupabase,
@@ -41,34 +41,61 @@ export const StoreProvider = ({ children }) => {
   const cleanPhone = rawDigits.length === 12 && rawDigits.startsWith('91')
     ? rawDigits.slice(2)
     : rawDigits;
-  const cleanName = (userName || '').trim().toLowerCase();
 
-  // Store Manager Mode: allows owner/staff to delete/add/edit items directly on the storefront
-  const [isManagerMode, setIsManagerMode] = useState(() => {
+  // Purge legacy manager mode from localStorage to prevent normal user contamination
+  useEffect(() => {
     try {
-      return localStorage.getItem('nissi_manager_mode') === 'true';
+      localStorage.removeItem('nissi_manager_mode');
+    } catch {}
+  }, []);
+
+  // Secure Admin / Staff Authentication Session (sessionStorage: per-tab/session isolation)
+  const [adminAuthSession, setAdminAuthSession] = useState(() => {
+    try {
+      return sessionStorage.getItem('nissi_admin_auth') === 'true';
     } catch {
       return false;
     }
   });
 
+  // Strict role isolation: Admin privileges ONLY if logged in with ADMIN_PHONE or verified with Admin PIN
+  const isAdminOrStaff = Boolean(
+    (isLoggedIn && cleanPhone === ADMIN_PHONE) ||
+    adminAuthSession === true
+  );
+
+  // Manager mode (catalogue editing/deletion buttons on storefront) is strictly restricted to authenticated admins
+  const [isManagerMode, setIsManagerMode] = useState(false);
+
   const toggleManagerMode = (overrideVal) => {
-    setIsManagerMode((prev) => {
-      const nextVal = typeof overrideVal === 'boolean' ? overrideVal : !prev;
-      try {
-        localStorage.setItem('nissi_manager_mode', String(nextVal));
-      } catch (e) {
-        console.warn('Failed to save manager mode to localStorage:', e);
-      }
-      return nextVal;
-    });
+    if (!isAdminOrStaff) {
+      setIsManagerMode(false);
+      return false;
+    }
+    setIsManagerMode((prev) => (typeof overrideVal === 'boolean' ? overrideVal : !prev));
+    return true;
   };
 
-  const isAdminOrStaff = Boolean(
-    isManagerMode ||
-    (isLoggedIn && cleanPhone === ADMIN_PHONE) ||
-    (isLoggedIn && cleanPhone === ADMIN_PHONE && cleanName === ADMIN_NAME)
-  );
+  const authenticateAdmin = (pin) => {
+    const cleanPin = String(pin || '').trim();
+    if (cleanPin === ADMIN_SECURITY_PIN) {
+      setAdminAuthSession(true);
+      try {
+        sessionStorage.setItem('nissi_admin_auth', 'true');
+      } catch {}
+      return { success: true };
+    }
+    return { success: false, message: 'Incorrect Admin PIN. Access restricted to store owner.' };
+  };
+
+  const revokeAdminAuth = () => {
+    setAdminAuthSession(false);
+    setIsManagerMode(false);
+    try {
+      sessionStorage.removeItem('nissi_admin_auth');
+    } catch {}
+    setActiveView((curr) => (curr === 'admin' || curr === 'staff' ? 'home' : curr));
+  };
 
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
@@ -455,6 +482,7 @@ export const StoreProvider = ({ children }) => {
     } catch (e) {
       console.warn('Failed to clear user session:', e);
     }
+    revokeAdminAuth();
     setActiveView((curr) => (curr === 'admin' || curr === 'staff' ? 'home' : curr));
   };
 
@@ -704,6 +732,25 @@ export const StoreProvider = ({ children }) => {
     clearCart();
     removeCoupon();
     setActiveView('tracking');
+
+    // Auto-save delivery address to customer profile savedAddresses if not already present
+    if (orderData.address && orderData.address.trim().length > 5) {
+      const cleanAddr = orderData.address.trim();
+      setSavedAddresses((prev) => {
+        const alreadyExists = prev.some((a) => a.address.toLowerCase() === cleanAddr.toLowerCase());
+        if (!alreadyExists) {
+          const newSaved = [
+            ...prev,
+            { id: `addr-${Date.now()}`, tag: prev.length === 0 ? 'Home' : `Address ${prev.length + 1}`, address: cleanAddr }
+          ];
+          try {
+            localStorage.setItem('nissi_saved_addresses', JSON.stringify(newSaved));
+          } catch {}
+          return newSaved;
+        }
+        return prev;
+      });
+    }
 
     // Sync to Supabase cloud if configured
     saveOrderToSupabase(newOrder);
@@ -997,7 +1044,11 @@ export const StoreProvider = ({ children }) => {
         isQuickAddOpen,
         setIsQuickAddOpen,
         productToDelete,
-        setProductToDelete
+        setProductToDelete,
+        adminAuthSession,
+        authenticateAdmin,
+        revokeAdminAuth,
+        ADMIN_SECURITY_PIN
       }}
     >
       {children}

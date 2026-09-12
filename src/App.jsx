@@ -32,8 +32,10 @@ function MainContent() {
     userPhone,
     userName,
     utilityType,
-    toggleManagerMode
+    authenticateAdmin
   } = useStore();
+  const [adminPinInput, setAdminPinInput] = React.useState('');
+  const [adminPinError, setAdminPinError] = React.useState('');
   const [isOnline, setIsOnline] = React.useState(navigator.onLine);
 
   React.useEffect(() => {
@@ -106,35 +108,63 @@ function MainContent() {
           </div>
           <div>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-kumkum/10 text-kumkum border border-kumkum/20">
-              Restricted Access
+              Restricted Portal
             </span>
             <h2 className="mt-2 font-serif font-bold text-xl text-ink">
               {activeView === 'admin' ? 'Store Admin Center' : 'Delivery Rider Portal'}
             </h2>
             <p className="mt-2 text-xs text-ink-soft leading-relaxed">
-              This portal is restricted to authorized store management and staff only. Please sign in with your authorized account.
+              This area is restricted to authorized store management and staff. Enter your Admin PIN to unlock access.
             </p>
           </div>
 
-          <div className="pt-2 space-y-2.5">
-            <button
-              type="button"
-              onClick={() => toggleManagerMode(true)}
-              className="w-full py-3 bg-forest text-paper font-bold text-xs rounded-xl shadow-md hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-1.5"
-            >
-              <span>✨ Unlock Store Manager Access (Add & Delete Items)</span>
-            </button>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setAdminPinError('');
+              const res = authenticateAdmin(adminPinInput);
+              if (!res.success) {
+                setAdminPinError(res.message || 'Invalid PIN.');
+              }
+            }}
+            className="pt-2 space-y-3"
+          >
+            {adminPinError && (
+              <div className="p-2 bg-kumkum/10 text-kumkum border border-kumkum/30 rounded-xl text-xs font-semibold">
+                {adminPinError}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                maxLength={6}
+                value={adminPinInput}
+                onChange={(e) => setAdminPinInput(e.target.value)}
+                placeholder="Enter 4-digit Admin PIN"
+                className="flex-1 px-3.5 py-2.5 bg-paper rounded-xl border border-hairline text-ink font-mono text-center tracking-widest text-sm focus:outline-none focus:border-forest"
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="px-4 py-2.5 bg-forest text-paper font-bold text-xs rounded-xl shadow-md hover:bg-forest-soft transition-colors cursor-pointer"
+              >
+                Verify PIN
+              </button>
+            </div>
+          </form>
+
+          <div className="pt-2 border-t border-hairline/60 space-y-2">
             <button
               onClick={() => setIsLoginOpen(true)}
-              className="w-full py-2.5 bg-cardcream hover:bg-paper text-ink font-semibold text-xs rounded-xl border border-hairline transition-colors"
+              className="w-full py-2.5 bg-cardcream hover:bg-paper text-ink font-semibold text-xs rounded-xl border border-hairline transition-colors cursor-pointer"
             >
-              Sign In with Mobile
+              Sign In with Store Owner Mobile (+91 9966712681)
             </button>
             <button
               onClick={() => setActiveView('home')}
-              className="w-full py-2 bg-transparent text-ink-soft hover:text-ink font-semibold text-xs transition-colors"
+              className="w-full py-2 bg-transparent text-ink-soft hover:text-ink font-semibold text-xs transition-colors cursor-pointer"
             >
-              Return to Storefront
+              Return to Customer Storefront
             </button>
           </div>
         </div>
