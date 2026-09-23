@@ -175,17 +175,47 @@ export const StoreProvider = ({ children }) => {
   const [cart, setCart] = useState(() => {
     try {
       const saved = localStorage.getItem('nissi_cart_v1');
+
       if (saved) {
         const parsed = JSON.parse(saved);
+
         if (Array.isArray(parsed)) {
-          return parsed.filter(
-            (item) => item && item.category !== 'coconut' && !item.name?.toLowerCase().includes('coconut')
-          );
+          return parsed
+            .filter(
+              (item) =>
+                item &&
+                item.category !== 'coconut' &&
+                !item.name?.toLowerCase().includes('coconut')
+            )
+            .map((item) => {
+              const price = Number(item.price);
+              const mrp = Number(item.mrp ?? item.price);
+              const quantity = Number(item.quantity);
+              const stock = Number(
+                item.selectedVariant?.stock ?? item.stock
+              );
+
+              return {
+                ...item,
+                price: Number.isFinite(price) && price >= 0 ? price : 0,
+                mrp: Number.isFinite(mrp) && mrp >= 0 ? mrp : 0,
+                quantity:
+                  Number.isFinite(quantity) && quantity > 0
+                    ? Math.floor(quantity)
+                    : 1,
+                stock:
+                  Number.isFinite(stock) && stock >= 0
+                    ? stock
+                    : 0
+              };
+            })
+            .filter((item) => item.stock > 0);
         }
       }
     } catch (e) {
       console.warn('Could not parse saved cart from localStorage:', e);
     }
+
     return [];
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -332,8 +362,31 @@ export const StoreProvider = ({ children }) => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
 
-  const cartSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartSubtotal = cart.reduce((sum, item) => {
+    const price = Number(item?.price);
+    const quantity = Number(item?.quantity);
+
+    if (
+      !Number.isFinite(price) ||
+      price < 0 ||
+      !Number.isFinite(quantity) ||
+      quantity <= 0
+    ) {
+      return sum;
+    }
+
+    return sum + price * Math.floor(quantity);
+  }, 0);
+
+  const cartItemCount = cart.reduce((sum, item) => {
+    const quantity = Number(item?.quantity);
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return sum;
+    }
+
+    return sum + Math.floor(quantity);
+  }, 0);
 
   const applyCoupon = (rawCode) => {
     const code = (rawCode || '').trim().toUpperCase();
@@ -382,32 +435,99 @@ export const StoreProvider = ({ children }) => {
 
   const addToCart = (product, qty = 1, selectedVariant = null) => {
     if (!isLoggedIn) {
-      setLoginPromptMessage('Please sign in with your mobile number to add items to your cart and place orders.');
+      setLoginPromptMessage(
+        'Please sign in with your mobile number to add items to your cart and place orders.'
+      );
       setPendingCartAction({ product, qty, selectedVariant });
       setIsLoginOpen(true);
       return false;
     }
 
-    const activeStock = selectedVariant?.stock ?? product.stock;
-    if (activeStock <= 0) return false;
+    if (!product || !product.id) {
+      console.warn('Cannot add invalid product to cart:', product);
+      return false;
+    }
 
-    const activeUnit = selectedVariant?.unit || product.unit;
-    const activePrice = selectedVariant?.price ?? product.price;
-    const activeMrp = selectedVariant?.mrp ?? product.mrp ?? activePrice;
+    const rawQty = Number(qty);
+    const safeQty =
+      Number.isFinite(rawQty) && rawQty > 0
+        ? Math.floor(rawQty)
+        : 1;
+
+    const rawStock =
+      selectedVariant?.stock ?? product.stock;
+
+    const activeStock = Number(rawStock);
+
+    if (!Number.isFinite(activeStock) || activeStock <= 0) {
+      console.warn('Cannot add product with invalid or unavailable stock:', {
+        productId: product.id,
+        stock: rawStock
+      });
+      return false;
+    }
+
+    const activeUnit =
+      selectedVariant?.unit || product.unit || '1 Unit';
+
+    const rawPrice =
+      selectedVariant?.price ?? product.price;
+
+    const rawMrp =
+      selectedVariant?.mrp ?? product.mrp ?? rawPrice;
+
+    const activePrice = Number(rawPrice);
+    const activeMrp = Number(rawMrp);
+
+    if (
+      !Number.isFinite(activePrice) ||
+      activePrice < 0 ||
+      !Number.isFinite(activeMrp) ||
+      activeMrp < 0
+    ) {
+      console.warn('Cannot add product with invalid price:', {
+        productId: product.id,
+        price: rawPrice,
+        mrp: rawMrp
+      });
+      return false;
+    }
+
     const cartItemId = selectedVariant
-      ? `${product.id}-${selectedVariant.unit.replace(/\s+/g, '')}`
+      ? `${product.id}-${String(activeUnit).replace(/\s+/g, '')}`
       : (product.cartItemId || product.id);
 
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => (item.cartItemId || item.id) === cartItemId);
+      const existing = prevCart.find(
+        (item) => (item.cartItemId || item.id) === cartItemId
+      );
+
       if (existing) {
-        const newQty = Math.min(existing.quantity + qty, activeStock);
+        const existingQty = Number(existing.quantity);
+        const safeExistingQty =
+          Number.isFinite(existingQty) && existingQty > 0
+            ? Math.floor(existingQty)
+            : 0;
+
+        const newQty = Math.min(
+          safeExistingQty + safeQty,
+          Math.floor(activeStock)
+        );
+
         return prevCart.map((item) =>
           (item.cartItemId || item.id) === cartItemId
-            ? { ...item, quantity: newQty, unit: activeUnit, price: activePrice, mrp: activeMrp }
+            ? {
+                ...item,
+                quantity: newQty,
+                unit: activeUnit,
+                price: activePrice,
+                mrp: activeMrp,
+                stock: Math.floor(activeStock)
+              }
             : item
         );
       }
+
       return [
         ...prevCart,
         {
@@ -416,11 +536,13 @@ export const StoreProvider = ({ children }) => {
           unit: activeUnit,
           price: activePrice,
           mrp: activeMrp,
+          stock: Math.floor(activeStock),
           selectedVariant: selectedVariant || null,
-          quantity: Math.min(qty, activeStock)
+          quantity: Math.min(safeQty, Math.floor(activeStock))
         }
       ];
     });
+
     setIsCartOpen(true);
     return true;
   };
@@ -432,18 +554,62 @@ export const StoreProvider = ({ children }) => {
       return;
     }
 
+    const rawDelta = Number(delta);
+
+    if (!Number.isFinite(rawDelta) || rawDelta === 0) {
+      console.warn('Ignoring invalid cart quantity change:', delta);
+      return;
+    }
+
+    const safeDelta = rawDelta > 0 ? Math.floor(rawDelta) : Math.ceil(rawDelta);
+
     setCart((prevCart) => {
       return prevCart
         .map((item) => {
           const itemId = item.cartItemId || item.id;
-          if (itemId === cartItemIdOrProductId || item.id === cartItemIdOrProductId) {
-            const nextQty = item.quantity + delta;
-            if (nextQty <= 0) return null;
-            const baseProduct = products.find((p) => p.id === item.id);
-            const stockLimit = item.selectedVariant?.stock ?? baseProduct?.stock ?? item.stock ?? 99;
-            return { ...item, quantity: Math.min(nextQty, stockLimit) };
+
+          if (
+            itemId !== cartItemIdOrProductId &&
+            item.id !== cartItemIdOrProductId
+          ) {
+            return item;
           }
-          return item;
+
+          const rawQuantity = Number(item.quantity);
+          const currentQuantity =
+            Number.isFinite(rawQuantity) && rawQuantity > 0
+              ? Math.floor(rawQuantity)
+              : 0;
+
+          const baseProduct = products.find((p) => p.id === item.id);
+
+          const rawStock =
+            item.selectedVariant?.stock ??
+            baseProduct?.stock ??
+            item.stock;
+
+          const stockLimit = Number(rawStock);
+
+          if (!Number.isFinite(stockLimit) || stockLimit <= 0) {
+            console.warn('Removing cart item with invalid stock:', {
+              productId: item.id,
+              stock: rawStock
+            });
+            return null;
+          }
+
+          const safeStockLimit = Math.floor(stockLimit);
+          const nextQty = currentQuantity + safeDelta;
+
+          if (nextQty <= 0) {
+            return null;
+          }
+
+          return {
+            ...item,
+            quantity: Math.min(nextQty, safeStockLimit),
+            stock: safeStockLimit
+          };
         })
         .filter(Boolean);
     });
@@ -497,22 +663,89 @@ export const StoreProvider = ({ children }) => {
     // Automatically fulfill pending item addition right after sign-in
     if (pendingCartAction?.product) {
       const { product, qty, selectedVariant } = pendingCartAction;
-      const activeStock = selectedVariant?.stock ?? product.stock;
-      const activeUnit = selectedVariant?.unit || product.unit;
-      const activePrice = selectedVariant?.price ?? product.price;
-      const activeMrp = selectedVariant?.mrp ?? product.mrp ?? activePrice;
+
+      if (!product?.id) {
+        console.warn('Cannot restore invalid pending cart product:', product);
+        setPendingCartAction(null);
+        return;
+      }
+
+      const rawQty = Number(qty);
+      const safeQty =
+        Number.isFinite(rawQty) && rawQty > 0
+          ? Math.floor(rawQty)
+          : 1;
+
+      const rawStock =
+        selectedVariant?.stock ?? product.stock;
+
+      const activeStock = Number(rawStock);
+
+      const activeUnit =
+        selectedVariant?.unit || product.unit || '1 Unit';
+
+      const rawPrice =
+        selectedVariant?.price ?? product.price;
+
+      const rawMrp =
+        selectedVariant?.mrp ?? product.mrp ?? rawPrice;
+
+      const activePrice = Number(rawPrice);
+      const activeMrp = Number(rawMrp);
+
+      if (
+        !Number.isFinite(activeStock) ||
+        activeStock <= 0 ||
+        !Number.isFinite(activePrice) ||
+        activePrice < 0 ||
+        !Number.isFinite(activeMrp) ||
+        activeMrp < 0
+      ) {
+        console.warn('Cannot restore pending cart item with invalid data:', {
+          productId: product.id,
+          stock: rawStock,
+          price: rawPrice,
+          mrp: rawMrp
+        });
+        setPendingCartAction(null);
+        return;
+      }
+
       const cartItemId = selectedVariant
-        ? `${product.id}-${selectedVariant.unit.replace(/\s+/g, '')}`
+        ? `${product.id}-${String(activeUnit).replace(/\s+/g, '')}`
         : (product.cartItemId || product.id);
 
       setCart((prevCart) => {
-        const existing = prevCart.find((item) => (item.cartItemId || item.id) === cartItemId);
+        const existing = prevCart.find(
+          (item) => (item.cartItemId || item.id) === cartItemId
+        );
+
         if (existing) {
-          const newQty = Math.min(existing.quantity + (qty || 1), activeStock);
+          const existingQty = Number(existing.quantity);
+          const safeExistingQty =
+            Number.isFinite(existingQty) && existingQty > 0
+              ? Math.floor(existingQty)
+              : 0;
+
+          const newQty = Math.min(
+            safeExistingQty + safeQty,
+            Math.floor(activeStock)
+          );
+
           return prevCart.map((item) =>
-            (item.cartItemId || item.id) === cartItemId ? { ...item, quantity: newQty } : item
+            (item.cartItemId || item.id) === cartItemId
+              ? {
+                  ...item,
+                  quantity: newQty,
+                  unit: activeUnit,
+                  price: activePrice,
+                  mrp: activeMrp,
+                  stock: Math.floor(activeStock)
+                }
+              : item
           );
         }
+
         return [
           ...prevCart,
           {
@@ -521,11 +754,16 @@ export const StoreProvider = ({ children }) => {
             unit: activeUnit,
             price: activePrice,
             mrp: activeMrp,
+            stock: Math.floor(activeStock),
             selectedVariant: selectedVariant || null,
-            quantity: Math.min(qty || 1, activeStock)
+            quantity: Math.min(
+              safeQty,
+              Math.floor(activeStock)
+            )
           }
         ];
       });
+
       setPendingCartAction(null);
       setIsCartOpen(true);
     }
