@@ -56,7 +56,7 @@ export default function LoginModal() {
       setError('Please enter your full name.');
       return;
     }
-    loginDirect(name.trim(), digits.slice(-10));
+    loginDirect(digits.slice(-10), name.trim());
     setIsLoginOpen(false);
   };
 
