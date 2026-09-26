@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { signInAdmin } from '../lib/supabaseAuth';
 import { X, Phone, CheckCircle2, MapPin, User, ShieldCheck, Store, Truck, Lock, Package, Calendar, MessageSquare } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -13,10 +14,9 @@ export default function LoginModal() {
     userName,
     userPhone,
     logout,
+    lockAdminMode,
     savedAddresses,
     isAdminOrStaff,
-    authenticateAdmin,
-    revokeAdminAuth,
     openSubscriptionModal,
     orders,
     setActiveView
@@ -26,21 +26,21 @@ export default function LoginModal() {
   const [name, setName] = useState(userName || '');
   const [error, setError] = useState('');
 
-  // Admin PIN prompt state
-  const [showAdminPinInput, setShowAdminPinInput] = useState(false);
-  const [adminPin, setAdminPin] = useState('');
-  const [adminPinError, setAdminPinError] = useState('');
-  const [adminPinSuccess, setAdminPinSuccess] = useState('');
+  // Management sign-in state
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminLoginSuccess, setAdminLoginSuccess] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminLoginError, setAdminLoginError] = useState('');
+  const [adminLoginLoading, setAdminLoginLoading] = useState(false);
 
   if (!isLoginOpen) return null;
 
   const handleClose = () => {
     setIsLoginOpen(false);
     setError('');
-    setShowAdminPinInput(false);
-    setAdminPin('');
-    setAdminPinError('');
-    setAdminPinSuccess('');
+    setShowAdminLogin(false);
+    setAdminLoginSuccess('');
     if (setLoginPromptMessage) setLoginPromptMessage('');
   };
 
@@ -58,22 +58,6 @@ export default function LoginModal() {
     }
     loginDirect(digits.slice(-10), name.trim());
     setIsLoginOpen(false);
-  };
-
-  const handleVerifyAdminPin = (e) => {
-    e.preventDefault();
-    setAdminPinError('');
-    const res = authenticateAdmin(adminPin);
-    if (res.success) {
-      setAdminPinSuccess('Admin privileges unlocked!');
-      setTimeout(() => {
-        setShowAdminPinInput(false);
-        setAdminPin('');
-        setAdminPinSuccess('');
-      }, 800);
-    } else {
-      setAdminPinError(res.message || 'Incorrect PIN.');
-    }
   };
 
   const activeCustomerOrders = orders.filter((o) => o.status !== 'Delivered' && o.status !== 'Cancelled');
@@ -160,7 +144,13 @@ export default function LoginModal() {
                   </button>
                 </div>
                 <button
-                  onClick={revokeAdminAuth}
+                  onClick={async () => {
+                    try {
+                      await lockAdminMode();
+                    } catch (error) {
+                      console.error('Failed to lock management session:', error);
+                    }
+                  }}
                   className="w-full py-1.5 text-[11px] font-semibold text-ink-soft hover:text-ink transition-colors flex items-center justify-center gap-1"
                 >
                   <Lock className="w-3 h-3" />
@@ -252,30 +242,61 @@ export default function LoginModal() {
               Sign Out Account
             </button>
 
-            {/* Staff / Admin PIN Login Gate */}
+            {/* Staff / Admin Supabase Login Gate */}
             {!isAdminOrStaff && (
               <div className="pt-2 border-t border-hairline/60">
-                {!showAdminPinInput ? (
+                {!showAdminLogin ? (
                   <button
                     type="button"
-                    onClick={() => setShowAdminPinInput(true)}
+                    onClick={() => {
+                      setShowAdminLogin(true);
+                      setAdminLoginError('');
+                    }}
                     className="w-full py-1 text-[11px] text-ink-soft/70 hover:text-forest transition-colors flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <Lock className="w-3 h-3" />
-                    <span>Store Staff or Owner? Enter Admin PIN</span>
+                    <span>Store Staff or Owner? Sign in</span>
                   </button>
                 ) : (
-                  <form onSubmit={handleVerifyAdminPin} className="p-3 bg-cardcream/80 border border-hairline rounded-xl space-y-2 animate-fade-in">
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setAdminLoginError('');
+                      setAdminLoginLoading(true);
+
+                      try {
+                        await signInAdmin(adminEmail, adminPassword);
+
+                        setAdminLoginSuccess('Management sign-in successful!');
+
+                        setTimeout(() => {
+                          setShowAdminLogin(false);
+                          setAdminEmail('');
+                          setAdminPassword('');
+                          setAdminLoginSuccess('');
+                        }, 800);
+                      } catch (authError) {
+                        setAdminLoginError(
+                          authError?.message || 'Management sign-in failed.'
+                        );
+                      } finally {
+                        setAdminLoginLoading(false);
+                      }
+                    }}
+                    className="p-3 bg-cardcream/80 border border-hairline rounded-xl space-y-2 animate-fade-in"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-ink flex items-center gap-1">
                         <Lock className="w-3 h-3 text-forest" />
-                        <span>Admin PIN Verification</span>
+                        <span>Management Sign In</span>
                       </span>
+
                       <button
                         type="button"
                         onClick={() => {
-                          setShowAdminPinInput(false);
-                          setAdminPinError('');
+                          setShowAdminLogin(false);
+                          setAdminLoginError('');
+                          setAdminLoginSuccess('');
                         }}
                         className="text-[11px] text-ink-soft hover:text-ink"
                       >
@@ -283,34 +304,45 @@ export default function LoginModal() {
                       </button>
                     </div>
 
-                    {adminPinError && (
+                    {adminLoginError && (
                       <div className="p-1.5 bg-kumkum/10 text-kumkum text-[11px] font-semibold rounded-lg text-center">
-                        {adminPinError}
-                      </div>
-                    )}
-                    {adminPinSuccess && (
-                      <div className="p-1.5 bg-forest/10 text-forest text-[11px] font-semibold rounded-lg text-center">
-                        {adminPinSuccess}
+                        {adminLoginError}
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="password"
-                        maxLength={6}
-                        value={adminPin}
-                        onChange={(e) => setAdminPin(e.target.value)}
-                        placeholder="Enter 4-digit PIN"
-                        className="flex-1 px-3 py-1.5 bg-paper rounded-lg border border-hairline text-xs font-mono text-center tracking-widest focus:outline-none focus:border-forest"
-                        autoFocus
-                      />
-                      <button
-                        type="submit"
-                        className="px-3 py-1.5 bg-forest text-paper text-xs font-bold rounded-lg hover:bg-forest-soft transition-colors cursor-pointer"
-                      >
-                        Unlock
-                      </button>
-                    </div>
+                    {adminLoginSuccess && (
+                      <div className="p-1.5 bg-forest/10 text-forest text-[11px] font-semibold rounded-lg text-center">
+                        {adminLoginSuccess}
+                      </div>
+                    )}
+
+                    <input
+                      type="email"
+                      required
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      placeholder="Management email"
+                      autoComplete="username"
+                      className="w-full px-3 py-2 bg-paper rounded-lg border border-hairline text-xs focus:outline-none focus:border-forest"
+                    />
+
+                    <input
+                      type="password"
+                      required
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      placeholder="Password"
+                      autoComplete="current-password"
+                      className="w-full px-3 py-2 bg-paper rounded-lg border border-hairline text-xs focus:outline-none focus:border-forest"
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={adminLoginLoading}
+                      className="w-full px-3 py-2 bg-forest text-paper text-xs font-bold rounded-lg hover:bg-forest-soft transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {adminLoginLoading ? 'Signing in...' : 'Sign In'}
+                    </button>
                   </form>
                 )}
               </div>

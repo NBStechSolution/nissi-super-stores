@@ -47,6 +47,7 @@ export default function AdminDashboard() {
   const {
     isStoreOpen,
     setIsStoreOpen,
+    updateStoreSettings,
     isHolidayClosed,
     setIsHolidayClosed,
     holidayReason,
@@ -237,7 +238,19 @@ export default function AdminDashboard() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsStoreOpen(!isStoreOpen)}
+            onClick={async () => {
+              const nextValue = !isStoreOpen;
+              setIsStoreOpen(nextValue);
+
+              const saved = await updateStoreSettings({
+                is_store_open: nextValue
+              });
+
+              if (!saved) {
+                setIsStoreOpen(!nextValue);
+                alert('Unable to update store status. Please try again.');
+              }
+            }}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
               isStoreOpen
                 ? 'bg-forest text-paper border-forest'
@@ -298,7 +311,19 @@ export default function AdminDashboard() {
           </button>
 
           <button
-            onClick={() => setIsStoreOpen(!isStoreOpen)}
+            onClick={async () => {
+              const nextValue = !isStoreOpen;
+              setIsStoreOpen(nextValue);
+
+              const saved = await updateStoreSettings({
+                is_store_open: nextValue
+              });
+
+              if (!saved) {
+                setIsStoreOpen(!nextValue);
+                alert('Unable to update store status. Please try again.');
+              }
+            }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
               isStoreOpen
                 ? 'bg-forest text-paper border-forest shadow-sm'
@@ -310,7 +335,19 @@ export default function AdminDashboard() {
           </button>
 
           <button
-            onClick={() => setEmergencyAvailable(!emergencyAvailable)}
+            onClick={async () => {
+              const nextValue = !emergencyAvailable;
+              setEmergencyAvailable(nextValue);
+
+              const saved = await updateStoreSettings({
+                emergency_available: nextValue
+              });
+
+              if (!saved) {
+                setEmergencyAvailable(!nextValue);
+                alert('Unable to update emergency availability. Please try again.');
+              }
+            }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
               emergencyAvailable
                 ? 'bg-saffron-gradient text-ink border-saffron-base shadow-sm'
@@ -988,7 +1025,21 @@ export default function AdminDashboard() {
                       <input
                         type="checkbox"
                         checked={isHolidayClosed}
-                        onChange={(e) => setIsHolidayClosed(e.target.checked)}
+                        onChange={async (e) => {
+                          const nextValue = e.target.checked;
+                          const previousValue = isHolidayClosed;
+
+                          setIsHolidayClosed(nextValue);
+
+                          const saved = await updateStoreSettings({
+                            is_holiday_closed: nextValue
+                          });
+
+                          if (!saved) {
+                            setIsHolidayClosed(previousValue);
+                            alert('Unable to update holiday closure. Please try again.');
+                          }
+                        }}
                         className="accent-kumkum w-4 h-4"
                       />
                     </label>
@@ -999,6 +1050,17 @@ export default function AdminDashboard() {
                         type="text"
                         value={holidayReason}
                         onChange={(e) => setHolidayReason(e.target.value)}
+                        onBlur={async (e) => {
+                          const saved = await updateStoreSettings({
+                            holiday_reason: e.target.value
+                          });
+
+                          if (!saved) {
+                            alert(
+                              'Unable to save the holiday reason. Please try again.'
+                            );
+                          }
+                        }}
                         placeholder="e.g. Festival Holiday / Inventory Audit"
                         className="w-full p-2 bg-cardcream rounded-lg border border-hairline text-ink focus:outline-none"
                       />
@@ -1010,7 +1072,21 @@ export default function AdminDashboard() {
                         <input
                           type="checkbox"
                           checked={isStoreOpen}
-                          onChange={(e) => setIsStoreOpen(e.target.checked)}
+                          onChange={async (e) => {
+                            const nextValue = e.target.checked;
+                            const previousValue = isStoreOpen;
+
+                            setIsStoreOpen(nextValue);
+
+                            const saved = await updateStoreSettings({
+                              is_store_open: nextValue
+                            });
+
+                            if (!saved) {
+                              setIsStoreOpen(previousValue);
+                              alert('Unable to update store status. Please try again.');
+                            }
+                          }}
                           className="accent-forest w-4 h-4"
                         />
                       </label>

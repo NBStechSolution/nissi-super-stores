@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { INITIAL_PRODUCTS, INITIAL_ORDERS, TELUGU_TRANSLATIONS, getProductVariants } from '../data/mockData';
-import { ADMIN_PHONE, ADMIN_SECURITY_PIN, PAYMENT_CONFIG } from '../data/paymentConfig';
+import { PAYMENT_CONFIG } from '../data/paymentConfig';
 import {
   fetchProductsFromSupabase,
   saveProductToSupabase,
@@ -13,6 +13,11 @@ import {
   subscribeToProducts
 } from '../lib/supabaseSync';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
+import {
+  getCurrentAuthSession,
+  subscribeToAuthChanges,
+  signOutAuth
+} from '../lib/supabaseAuth';
 
 const StoreContext = createContext();
 
@@ -35,6 +40,141 @@ export const StoreProvider = ({ children }) => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loginPromptMessage, setLoginPromptMessage] = useState('');
   const [pendingCartAction, setPendingCartAction] = useState(null);
+  const [supabaseAuthUser, setSupabaseAuthUser] = useState(null);
+  const [supabaseAuthRole, setSupabaseAuthRole] = useState(null);
+
+  const [isStoreOpen, setIsStoreOpen] = useState(true);
+  const [isHolidayClosed, setIsHolidayClosed] = useState(false);
+  const [holidayReason, setHolidayReason] = useState('');
+  const [emergencyAvailable, setEmergencyAvailable] = useState(true);
+  const [staffAvailable, setStaffAvailable] = useState(true);
+  const [normalWindow] = useState('Normal 2:15–5:15 PM');
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      return undefined;
+    }
+
+    let mounted = true;
+
+    const loadAuthSession = async () => {
+      try {
+        const authSession = await getCurrentAuthSession();
+
+        if (!mounted) return;
+
+        const user = authSession?.user || null;
+        setSupabaseAuthUser(user);
+        setSupabaseAuthRole(user?.app_metadata?.role || null);
+
+        if (user?.app_metadata?.role === 'admin') {
+          setIsLoggedIn(true);
+        }
+      } catch (error) {
+        console.warn('Could not load Supabase Auth session:', error);
+
+        if (mounted) {
+          setSupabaseAuthUser(null);
+          setSupabaseAuthRole(null);
+        }
+      }
+    };
+
+    loadAuthSession();
+
+    const subscription = subscribeToAuthChanges((_event, authSession) => {
+      const user = authSession?.user || null;
+      const role = user?.app_metadata?.role || null;
+
+      setSupabaseAuthUser(user);
+      setSupabaseAuthRole(role);
+
+      if (role === 'admin') {
+        setIsLoggedIn(true);
+      } else if (!user) {
+        setIsLoggedIn(Boolean(localStorage.getItem('nissi_user_session')));
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      return undefined;
+    }
+
+    let mounted = true;
+
+    const loadStoreSettings = async () => {
+      try {
+        const { data, error } = await (await import('../lib/supabaseClient'))
+          .supabase
+          .from('store_settings')
+          .select('*')
+          .eq('id', 1)
+          .maybeSingle();
+
+        if (error) {
+          console.warn('Could not load store settings:', error.message);
+          return;
+        }
+
+        if (!mounted || !data) return;
+
+        setIsStoreOpen(Boolean(data.is_store_open));
+        setIsHolidayClosed(Boolean(data.is_holiday_closed));
+        setHolidayReason(data.holiday_reason || '');
+        setEmergencyAvailable(Boolean(data.emergency_available));
+        setStaffAvailable(Boolean(data.staff_available));
+      } catch (error) {
+        console.warn('Could not load store settings:', error);
+      }
+    };
+
+    loadStoreSettings();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const updateStoreSettings = async (changes) => {
+    if (!isSupabaseConfigured) {
+      return false;
+    }
+
+    try {
+      const { supabase } = await import('../lib/supabaseClient');
+
+      if (!supabase) {
+        return false;
+      }
+
+      const { data, error } = await supabase
+        .from('store_settings')
+        .update({
+          ...changes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 1)
+        .select('id')
+        .single();
+
+      if (error) {
+        console.warn('Could not update store settings:', error.message);
+        return false;
+      }
+
+      return data?.id === 1;
+    } catch (error) {
+      console.warn('Could not update store settings:', error);
+      return false;
+    }
+  };
 
   // Strip non-digits and leading country code (91) if 12 digits so phone always normalizes to 10-digit format
   const rawDigits = (userPhone || '').replace(/\D/g, '');
@@ -49,19 +189,11 @@ export const StoreProvider = ({ children }) => {
     } catch {}
   }, []);
 
-  // Secure Admin / Staff Authentication Session (sessionStorage: per-tab/session isolation)
-  const [adminAuthSession, setAdminAuthSession] = useState(() => {
-    try {
-      return sessionStorage.getItem('nissi_admin_auth') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  // Strict role isolation: Admin privileges require a verified Supabase admin role
+  const isSupabaseAdmin = supabaseAuthRole === 'admin';
 
-  // Strict role isolation: Admin privileges ONLY if logged in with ADMIN_PHONE or verified with Admin PIN
   const isAdminOrStaff = Boolean(
-    (isLoggedIn && cleanPhone === ADMIN_PHONE) ||
-    adminAuthSession === true
+    isSupabaseAdmin
   );
 
   // Manager mode (catalogue editing/deletion buttons on storefront) is strictly restricted to authenticated admins
@@ -74,27 +206,6 @@ export const StoreProvider = ({ children }) => {
     }
     setIsManagerMode((prev) => (typeof overrideVal === 'boolean' ? overrideVal : !prev));
     return true;
-  };
-
-  const authenticateAdmin = (pin) => {
-    const cleanPin = String(pin || '').trim();
-    if (cleanPin === ADMIN_SECURITY_PIN) {
-      setAdminAuthSession(true);
-      try {
-        sessionStorage.setItem('nissi_admin_auth', 'true');
-      } catch {}
-      return { success: true };
-    }
-    return { success: false, message: 'Incorrect Admin PIN. Access restricted to store owner.' };
-  };
-
-  const revokeAdminAuth = () => {
-    setAdminAuthSession(false);
-    setIsManagerMode(false);
-    try {
-      sessionStorage.removeItem('nissi_admin_auth');
-    } catch {}
-    setActiveView((curr) => (curr === 'admin' || curr === 'staff' ? 'home' : curr));
   };
 
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -136,13 +247,6 @@ export const StoreProvider = ({ children }) => {
     setUtilityType(type);
     setIsUtilityModalOpen(true);
   };
-
-  const [isStoreOpen, setIsStoreOpen] = useState(true);
-  const [isHolidayClosed, setIsHolidayClosed] = useState(false);
-  const [holidayReason, setHolidayReason] = useState('Ganesh Chaturthi Store Override');
-  const [emergencyAvailable, setEmergencyAvailable] = useState(true);
-  const [staffAvailable, setStaffAvailable] = useState(true);
-  const [normalWindow] = useState('Normal 2:15–5:15 PM');
 
   const [activeView, setActiveView] = useState('home');
   const [products, setProducts] = useState(() => {
@@ -772,20 +876,45 @@ export const StoreProvider = ({ children }) => {
   // Backward compatibility alias
   const loginWithOtp = loginDirect;
 
-  const logout = () => {
+  const logout = async () => {
+    if (isSupabaseConfigured && supabaseAuthUser) {
+      try {
+        await signOutAuth();
+      } catch (error) {
+        console.warn('Failed to sign out from Supabase Auth:', error);
+      }
+    }
+
     setIsLoggedIn(false);
     setUserPhone('');
     setUserName('');
     setPendingCartAction(null);
     setLoginPromptMessage('');
     clearCart();
+
     try {
       localStorage.removeItem('nissi_user_session');
     } catch (e) {
       console.warn('Failed to clear user session:', e);
     }
-    revokeAdminAuth();
-    setActiveView((curr) => (curr === 'admin' || curr === 'staff' ? 'home' : curr));
+    setActiveView((curr) =>
+      curr === 'admin' || curr === 'staff' ? 'home' : curr
+    );
+  };
+
+  const lockAdminMode = async () => {
+    if (isSupabaseConfigured && supabaseAuthUser) {
+      try {
+        await signOutAuth();
+      } catch (error) {
+        console.warn('Failed to lock management session:', error);
+      }
+    }
+
+    setIsManagerMode(false);
+    setActiveView((curr) =>
+      curr === 'admin' || curr === 'staff' ? 'home' : curr
+    );
   };
 
   const addNewProduct = async (productData) => {
@@ -1264,6 +1393,9 @@ export const StoreProvider = ({ children }) => {
         setLanguage,
         t,
         isLoggedIn,
+        supabaseAuthUser,
+        supabaseAuthRole,
+        isSupabaseAdmin,
         userPhone,
         userName,
         isAdminOrStaff,
@@ -1274,6 +1406,7 @@ export const StoreProvider = ({ children }) => {
         loginDirect,
         loginWithOtp,
         logout,
+        lockAdminMode,
         savedAddresses,
         setSavedAddresses,
         favorites,
@@ -1293,6 +1426,7 @@ export const StoreProvider = ({ children }) => {
         staffAvailable,
         setStaffAvailable,
         normalWindow,
+        updateStoreSettings,
         activeView,
         setActiveView,
         products,
@@ -1356,10 +1490,6 @@ export const StoreProvider = ({ children }) => {
         setIsQuickAddOpen,
         productToDelete,
         setProductToDelete,
-        adminAuthSession,
-        authenticateAdmin,
-        revokeAdminAuth,
-        ADMIN_SECURITY_PIN,
         getProductVariants,
         getItemQuantityInCart
       }}

@@ -5,7 +5,6 @@ import { useStore } from '../context/StoreContext';
 export default function Header() {
   const {
     isStoreOpen,
-    setIsStoreOpen,
     normalWindow,
     cartItemCount,
     setIsCartOpen,
@@ -62,22 +61,25 @@ export default function Header() {
         {/* Store Status Badge & Delivery Window Pill */}
         <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
           {/* Desktop & Tablet Store Status (Hidden on mobile to save space for customers) */}
-          <button
-            onClick={() => setIsStoreOpen(!isStoreOpen)}
-            className={`hidden md:flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold border transition-all duration-200 ${
+          <div
+            className={`hidden md:flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold border ${
               isStoreOpen
-                ? 'bg-forest/10 border-forest/30 text-forest hover:bg-forest/20'
-                : 'bg-kumkum/10 border-kumkum/30 text-kumkum hover:bg-kumkum/20'
+                ? 'bg-forest/10 border-forest/30 text-forest'
+                : 'bg-kumkum/10 border-kumkum/30 text-kumkum'
             }`}
-            title="Click to toggle store status"
+            title="Current store status"
           >
             <span
               className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${
                 isStoreOpen ? 'bg-forest animate-pulse-emerald' : 'bg-kumkum'
               }`}
             />
-            <span>{isStoreOpen ? t('storeOpen', 'Open') : t('storeClosed', 'Closed')}</span>
-          </button>
+            <span>
+              {isStoreOpen
+                ? t('storeOpen', 'Open')
+                : t('storeClosed', 'Closed')}
+            </span>
+          </div>
 
           <div className="hidden lg:flex items-center gap-1.5 px-3.5 py-1.5 bg-cardcream border border-hairline rounded-full text-xs text-ink font-medium shadow-xs">
             <Tag className="w-3.5 h-3.5 text-saffron-base" />
