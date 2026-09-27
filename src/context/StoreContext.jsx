@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { INITIAL_PRODUCTS, INITIAL_ORDERS, TELUGU_TRANSLATIONS, getProductVariants } from '../data/mockData';
+import { INITIAL_PRODUCTS, TELUGU_TRANSLATIONS, getProductVariants } from '../data/mockData';
 import { PAYMENT_CONFIG } from '../data/paymentConfig';
 import {
   fetchProductsFromSupabase,
@@ -410,18 +410,7 @@ export const StoreProvider = ({ children }) => {
     setSubscriptions((prev) => prev.filter((s) => s.id !== subId));
   };
 
-  const [orders, setOrders] = useState(() => {
-    try {
-      const saved = localStorage.getItem('nissi_orders_v1');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {
-      console.warn('Could not parse saved orders from localStorage:', e);
-    }
-    return INITIAL_ORDERS;
-  });
+  const [orders, setOrders] = useState([]);
   const [activeOrderId, setActiveOrderId] = useState('ORD-9842');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
@@ -1311,25 +1300,43 @@ export const StoreProvider = ({ children }) => {
       }
     });
 
-    fetchOrdersFromSupabase().then((remoteOrders) => {
-      if (remoteOrders && remoteOrders.length > 0) {
-        setOrders((prev) => {
-          const remoteIds = new Set(remoteOrders.map((o) => o.id));
-          const localOnly = prev.filter((o) => !remoteIds.has(o.id));
-          const merged = [...remoteOrders, ...localOnly];
-          try {
-            localStorage.setItem('nissi_orders_v1', JSON.stringify(merged));
-          } catch (e) {
-            console.warn('Could not cache merged orders:', e);
-          }
-          return merged;
-        });
-      }
-    });
+    fetchOrdersFromSupabase()
+      .then((remoteOrders) => {
+        if (!Array.isArray(remoteOrders)) {
+          console.warn('Could not load orders from Supabase.');
+          return;
+        }
+
+        // Supabase is authoritative. Never merge old browser orders.
+        setOrders(remoteOrders);
+
+        try {
+          localStorage.setItem(
+            'nissi_orders_v1',
+            JSON.stringify(remoteOrders)
+          );
+        } catch (error) {
+          console.warn('Could not cache orders:', error);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load orders:', error);
+      });
 
     const unsubscribe = subscribeToOrders((payload) => {
       if (payload?.eventType === 'DELETE' && payload?.old?.id) {
-        setOrders((prev) => prev.filter((o) => o.id !== payload.old.id));
+        setOrders((prev) => {
+          const updated = prev.filter((o) => o.id !== payload.old.id);
+
+          try {
+            localStorage.setItem('nissi_orders_v1', JSON.stringify(updated));
+          } catch (error) {
+            console.warn('Could not update cached orders:', error);
+          }
+
+          return updated;
+        });
+
         return;
       }
 
