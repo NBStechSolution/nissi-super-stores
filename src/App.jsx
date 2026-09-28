@@ -81,7 +81,9 @@ function MainContent() {
         <div className="space-y-6">
           <Hero2D />
           <CategoryRail />
-          <ProductGrid />
+          <section id="product-catalog" className="scroll-mt-24">
+            <ProductGrid />
+          </section>
         </div>
       )}
 

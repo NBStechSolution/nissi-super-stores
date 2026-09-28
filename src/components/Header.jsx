@@ -137,7 +137,18 @@ export default function Header() {
             </button>
           ) : (
             <button
-              onClick={() => setActiveView('home')}
+              onClick={() => {
+                setActiveView('home');
+
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(() => {
+                    document.getElementById('product-catalog')?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start'
+                    });
+                  });
+                });
+              }}
               className={`hidden md:inline-flex px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 activeView === 'home'
                   ? 'bg-forest text-paper shadow-sm'
