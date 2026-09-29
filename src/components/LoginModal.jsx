@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signInAdmin } from '../lib/supabaseAuth';
+import ManagementLoginForm from './ManagementLoginForm';
 import { X, Phone, CheckCircle2, MapPin, User, ShieldCheck, Store, Truck, Lock, Package, Calendar, MessageSquare } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -28,11 +28,6 @@ export default function LoginModal() {
 
   // Management sign-in state
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [adminLoginSuccess, setAdminLoginSuccess] = useState('');
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [adminLoginError, setAdminLoginError] = useState('');
-  const [adminLoginLoading, setAdminLoginLoading] = useState(false);
 
   if (!isLoginOpen) return null;
 
@@ -40,7 +35,6 @@ export default function LoginModal() {
     setIsLoginOpen(false);
     setError('');
     setShowAdminLogin(false);
-    setAdminLoginSuccess('');
     if (setLoginPromptMessage) setLoginPromptMessage('');
   };
 
@@ -248,108 +242,35 @@ export default function LoginModal() {
                 {!showAdminLogin ? (
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowAdminLogin(true);
-                      setAdminLoginError('');
-                    }}
-                    className="w-full py-1 text-[11px] text-ink-soft/70 hover:text-forest transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                    onClick={() => setShowAdminLogin(true)}
+                    className="w-full py-1 text-[11px] text-ink-soft/70 hover:text-forest flex items-center justify-center gap-1"
                   >
                     <Lock className="w-3 h-3" />
-                    <span>Store Staff or Owner? Sign in</span>
+                    Store Staff or Owner? Sign in
                   </button>
                 ) : (
-                  <form
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      setAdminLoginError('');
-                      setAdminLoginLoading(true);
-
-                      try {
-                        await signInAdmin(adminEmail, adminPassword);
-
-                        setAdminLoginSuccess('Management sign-in successful!');
-
-                        setTimeout(() => {
-                          setShowAdminLogin(false);
-                          setAdminEmail('');
-                          setAdminPassword('');
-                          setAdminLoginSuccess('');
-                        }, 800);
-                      } catch (authError) {
-                        setAdminLoginError(
-                          authError?.message || 'Management sign-in failed.'
-                        );
-                      } finally {
-                        setAdminLoginLoading(false);
-                      }
+                  <ManagementLoginForm
+                    onCancel={() => setShowAdminLogin(false)}
+                    onSuccess={() => {
+                      setShowAdminLogin(false);
+                      setIsLoginOpen(false);
                     }}
-                    className="p-3 bg-cardcream/80 border border-hairline rounded-xl space-y-2 animate-fade-in"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-ink flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-forest" />
-                        <span>Management Sign In</span>
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowAdminLogin(false);
-                          setAdminLoginError('');
-                          setAdminLoginSuccess('');
-                        }}
-                        className="text-[11px] text-ink-soft hover:text-ink"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-
-                    {adminLoginError && (
-                      <div className="p-1.5 bg-kumkum/10 text-kumkum text-[11px] font-semibold rounded-lg text-center">
-                        {adminLoginError}
-                      </div>
-                    )}
-
-                    {adminLoginSuccess && (
-                      <div className="p-1.5 bg-forest/10 text-forest text-[11px] font-semibold rounded-lg text-center">
-                        {adminLoginSuccess}
-                      </div>
-                    )}
-
-                    <input
-                      type="email"
-                      required
-                      value={adminEmail}
-                      onChange={(e) => setAdminEmail(e.target.value)}
-                      placeholder="Management email"
-                      autoComplete="username"
-                      className="w-full px-3 py-2 bg-paper rounded-lg border border-hairline text-xs focus:outline-none focus:border-forest"
-                    />
-
-                    <input
-                      type="password"
-                      required
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      placeholder="Password"
-                      autoComplete="current-password"
-                      className="w-full px-3 py-2 bg-paper rounded-lg border border-hairline text-xs focus:outline-none focus:border-forest"
-                    />
-
-                    <button
-                      type="submit"
-                      disabled={adminLoginLoading}
-                      className="w-full px-3 py-2 bg-forest text-paper text-xs font-bold rounded-lg hover:bg-forest-soft transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {adminLoginLoading ? 'Signing in...' : 'Sign In'}
-                    </button>
-                  </form>
+                  />
                 )}
               </div>
             )}
           </div>
         ) : (
           /* Instant 1-Step Direct Sign-in Form */
+          showAdminLogin ? (
+            <ManagementLoginForm
+              onCancel={() => setShowAdminLogin(false)}
+              onSuccess={() => {
+                setShowAdminLogin(false);
+                setIsLoginOpen(false);
+              }}
+            />
+          ) : (
           <form onSubmit={handleDirectLogin} className="space-y-4 pt-1">
             <div className="text-center space-y-1">
               <div className="w-12 h-12 bg-forest/10 text-forest rounded-2xl flex items-center justify-center mx-auto mb-2 border border-forest/20">
@@ -412,7 +333,20 @@ export default function LoginModal() {
               <CheckCircle2 className="w-4 h-4" />
               <span>Sign In Instantly</span>
             </button>
+            <div className="pt-3 border-t border-hairline text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAdminLogin(true);
+                }}
+                className="text-xs font-semibold text-forest hover:underline"
+              >
+                <Lock className="inline w-3.5 h-3.5 mr-1" />
+                Store Owner / Staff Login
+              </button>
+            </div>
           </form>
+          )
         )}
 
       </div>
