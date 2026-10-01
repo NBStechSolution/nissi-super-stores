@@ -3,6 +3,7 @@ import { INITIAL_PRODUCTS, TELUGU_TRANSLATIONS, getProductVariants } from '../da
 import { PAYMENT_CONFIG } from '../data/paymentConfig';
 import {
   fetchProductsFromSupabase,
+  fetchProductVariantsFromSupabase,
   saveProductToSupabase,
   deleteProductFromSupabase,
   fetchOrdersFromSupabase,
@@ -1222,29 +1223,55 @@ export const StoreProvider = ({ children }) => {
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
-    fetchProductsFromSupabase().then((remoteProducts) => {
+    Promise.all([
+      fetchProductsFromSupabase(),
+      fetchProductVariantsFromSupabase()
+    ]).then(([remoteProducts, remoteVariants]) => {
       if (remoteProducts && remoteProducts.length > 0) {
         setProducts((prev) => {
           const remoteIds = new Set(remoteProducts.map((p) => p.id));
+
           // Preserve any locally created products that aren't yet in Supabase
           const localOnly = prev.filter((p) => p && !remoteIds.has(p.id));
+
           // Sync any unsynced local products to Supabase in background
           localOnly.forEach((localProd) => {
             saveProductToSupabase(localProd).catch(() => {});
           });
-          const enrichedRemote = remoteProducts.map((rp) => {
-            const defaultProd = INITIAL_PRODUCTS.find((ip) => ip.id === rp.id);
-            if (defaultProd?.variants && (!rp.variants || rp.variants.length === 0)) {
-              return { ...rp, variants: defaultProd.variants };
-            }
-            return rp;
+
+          const variantsByProduct = new Map();
+
+          if (Array.isArray(remoteVariants)) {
+            remoteVariants.forEach((variant) => {
+              const existing = variantsByProduct.get(variant.productId) || [];
+              existing.push({
+                unit: variant.unit,
+                price: variant.price,
+                mrp: variant.mrp,
+                stock: variant.stock,
+                lowStockThreshold: variant.lowStockThreshold,
+                variantId: variant.id
+              });
+              variantsByProduct.set(variant.productId, existing);
+            });
+          }
+
+          const mappedRemote = remoteProducts.map((product) => {
+            const variants = variantsByProduct.get(product.id);
+
+            return variants && variants.length > 0
+              ? { ...product, variants }
+              : product;
           });
-          const merged = [...enrichedRemote, ...localOnly];
+
+          const merged = [...mappedRemote, ...localOnly];
+
           try {
             localStorage.setItem('nissi_products_v1', JSON.stringify(merged));
           } catch (e) {
             console.warn('Could not cache remote products:', e);
           }
+
           return merged;
         });
       }

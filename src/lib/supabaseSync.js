@@ -40,6 +40,45 @@ export async function fetchProductsFromSupabase() {
 }
 
 /**
+ * Fetch active product variants from Supabase
+ */
+export async function fetchProductVariantsFromSupabase() {
+  if (!isSupabaseConfigured || !supabase) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('product_variants')
+      .select('id, product_id, unit, price, mrp, stock, low_stock_threshold, is_active')
+      .eq('is_active', true)
+      .order('product_id')
+      .order('price');
+
+    if (error) {
+      console.warn('Supabase product variants fetch warning:', error.message);
+      return null;
+    }
+
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data.map((row) => ({
+      id: row.id,
+      productId: row.product_id,
+      unit: row.unit,
+      price: Number(row.price),
+      mrp: Number(row.mrp),
+      stock: Number(row.stock),
+      lowStockThreshold: Number(row.low_stock_threshold ?? 5),
+      isActive: Boolean(row.is_active)
+    }));
+  } catch (err) {
+    console.warn('Supabase product variants fetch error:', err);
+    return null;
+  }
+}
+
+/**
  * Save or update product in Supabase 'products' table
  */
 export async function saveProductToSupabase(product) {
