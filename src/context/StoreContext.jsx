@@ -4,10 +4,10 @@ import { PAYMENT_CONFIG } from '../data/paymentConfig';
 import {
   fetchProductsFromSupabase,
   fetchProductVariantsFromSupabase,
+  createSecureOrderInSupabase,
   saveProductToSupabase,
   deleteProductFromSupabase,
   fetchOrdersFromSupabase,
-  saveOrderToSupabase,
   updateOrderStatusInSupabase,
   updateOrderPaymentInSupabase,
   subscribeToOrders,
@@ -539,6 +539,14 @@ export const StoreProvider = ({ children }) => {
 
     if (!product || !product.id) {
       console.warn('Cannot add invalid product to cart:', product);
+      return false;
+    }
+
+    if (product.isUtility) {
+      console.warn('Utility product checkout is not implemented:', {
+        productId: product.id,
+        utilityType: product.utilityType
+      });
       return false;
     }
 
@@ -1094,63 +1102,88 @@ export const StoreProvider = ({ children }) => {
     return { success: true, message: 'Order successfully marked as delivered and payment collected!' };
   };
 
-  const createOrder = (orderData) => {
-    const newOrder = {
-      id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+  const createOrder = async (orderData) => {
+    const secureItems = cart.map((item) => {
+      if (item.selectedVariant?.variantId) {
+        return {
+          productId: item.id,
+          variantId: item.selectedVariant.variantId,
+          quantity: Math.floor(Number(item.quantity))
+        };
+      }
+
+      const product = products.find((p) => p.id === item.id);
+      const variants = Array.isArray(product?.variants) ? product.variants : [];
+
+      const matchingVariant =
+        variants.find((variant) => variant.unit === item.unit) ||
+        (variants.length === 1 ? variants[0] : null);
+
+      return {
+        productId: item.id,
+        variantId: matchingVariant?.variantId || null,
+        quantity: Math.floor(Number(item.quantity))
+      };
+    });
+
+    const secureOrder = await createSecureOrderInSupabase({
       customerName: orderData.name || userName,
       phone: orderData.phone || userPhone,
       address: orderData.address,
-      items: [...cart],
-      subtotal: cartSubtotal,
-      discountAmount: discountAmount,
-      appliedCoupon: appliedCoupon ? appliedCoupon.code : null,
-      deliveryFee: deliveryFee,
-      totalAmount: grandTotal,
-      deliveryType: orderData.deliveryType,
-      status: 'Placed',
-      placedAt: 'Just now',
-      deliveryWindow: orderData.deliveryType === 'Emergency' ? 'Within 15 Mins' : '2:15 PM – 5:15 PM',
-      isEmergency: orderData.deliveryType === 'Emergency',
+      deliveryType: orderData.deliveryType || 'Normal',
       paymentMethod: orderData.paymentMethod || 'Doorstep UPI Scanner',
-      paymentStatus: orderData.paymentStatus || 'Unpaid (Collect at Doorstep)',
-      upiId: orderData.upiId || PAYMENT_CONFIG?.upiId || 'abicharan07@axl',
-      utr: orderData.utr || '',
-      paymentProof: orderData.paymentProof || null,
-      paidAt: null,
-      assignedRider: 'Raju M. (+91 91234 56789)'
+      items: secureItems,
+      appliedCoupon: appliedCoupon ? appliedCoupon.code : null
+    });
+
+    if (!secureOrder) {
+      return {
+        success: false,
+        message: 'Unable to place your order right now. Please check your cart and try again.'
+      };
+    }
+
+    const newOrder = {
+      id: secureOrder.id,
+      customerName: secureOrder.customer_name,
+      phone: secureOrder.phone,
+      address: secureOrder.address,
+      items: [...cart],
+      subtotal: Number(secureOrder.subtotal),
+      discountAmount: Number(secureOrder.discount_amount),
+      appliedCoupon: secureOrder.applied_coupon || null,
+      deliveryFee: Number(secureOrder.delivery_fee),
+      totalAmount: Number(secureOrder.total_amount),
+      deliveryType: secureOrder.delivery_type,
+      status: secureOrder.status,
+      placedAt: 'Just now',
+      deliveryWindow: secureOrder.delivery_window,
+      isEmergency: Boolean(secureOrder.is_emergency),
+      paymentMethod: secureOrder.payment_method,
+      paymentStatus: secureOrder.payment_status,
+      upiId: secureOrder.upi_id || PAYMENT_CONFIG?.upiId || 'abicharan07@axl',
+      utr: secureOrder.utr || '',
+      paymentProof: secureOrder.payment_proof || null,
+      paidAt: secureOrder.paid_at || null,
+      assignedRider: secureOrder.assigned_rider || null
     };
 
     if (orderData.deliveryType === 'Emergency') {
       playEmergencyChime();
     }
 
-    setProducts((prev) => {
-      const updated = prev.map((prod) => {
-        const totalInCart = cart
-          .filter((item) => item.id === prod.id)
-          .reduce((sum, item) => sum + item.quantity, 0);
-        if (totalInCart > 0) {
-          return { ...prod, stock: Math.max(0, prod.stock - totalInCart) };
-        }
-        return prod;
-      });
-      try {
-        localStorage.setItem('nissi_products_v1', JSON.stringify(updated));
-      } catch (e) {
-        console.warn('Failed to deduct order stock in localStorage:', e);
-      }
-      return updated;
-    });
-
     setOrders((prev) => {
       const updated = [newOrder, ...prev];
+
       try {
         localStorage.setItem('nissi_orders_v1', JSON.stringify(updated));
       } catch (e) {
         console.warn('Failed to save orders to localStorage:', e);
       }
+
       return updated;
     });
+
     setActiveOrderId(newOrder.id);
     clearCart();
     removeCoupon();
@@ -1159,24 +1192,40 @@ export const StoreProvider = ({ children }) => {
     // Auto-save delivery address to customer profile savedAddresses if not already present
     if (orderData.address && orderData.address.trim().length > 5) {
       const cleanAddr = orderData.address.trim();
+
       setSavedAddresses((prev) => {
-        const alreadyExists = prev.some((a) => a.address.toLowerCase() === cleanAddr.toLowerCase());
+        const alreadyExists = prev.some(
+          (a) => a.address.toLowerCase() === cleanAddr.toLowerCase()
+        );
+
         if (!alreadyExists) {
           const newSaved = [
             ...prev,
-            { id: `addr-${Date.now()}`, tag: prev.length === 0 ? 'Home' : `Address ${prev.length + 1}`, address: cleanAddr }
+            {
+              id: `addr-${Date.now()}`,
+              tag: prev.length === 0 ? 'Home' : `Address ${prev.length + 1}`,
+              address: cleanAddr
+            }
           ];
+
           try {
-            localStorage.setItem('nissi_saved_addresses', JSON.stringify(newSaved));
+            localStorage.setItem(
+              'nissi_saved_addresses',
+              JSON.stringify(newSaved)
+            );
           } catch {}
+
           return newSaved;
         }
+
         return prev;
       });
     }
 
-    // Sync to Supabase cloud if configured
-    saveOrderToSupabase(newOrder);
+    return {
+      success: true,
+      order: newOrder
+    };
   };
 
   const updateOrderStatus = (orderId, newStatus) => {
@@ -1562,4 +1611,3 @@ export const useStore = () => {
   }
   return context;
 };
-

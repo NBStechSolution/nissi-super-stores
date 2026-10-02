@@ -185,6 +185,45 @@ export async function fetchOrdersFromSupabase() {
 }
 
 /**
+ * Create an order through the secure Supabase transaction.
+ * Pricing, coupon validation, order ID, payment method,
+ * and variant stock are calculated and enforced by the database function.
+ */
+export async function createSecureOrderInSupabase({
+  customerName,
+  phone,
+  address,
+  deliveryType,
+  paymentMethod,
+  items,
+  appliedCoupon
+}) {
+  if (!isSupabaseConfigured || !supabase) return null;
+
+  try {
+    const { data, error } = await supabase.rpc('create_secure_order', {
+      p_customer_name: customerName || '',
+      p_phone: phone || '',
+      p_address: address || '',
+      p_delivery_type: deliveryType || 'Normal',
+      p_payment_method: paymentMethod || 'Doorstep UPI Scanner',
+      p_items: items || [],
+      p_applied_coupon: appliedCoupon || null
+    });
+
+    if (error) {
+      console.warn('Supabase secure order error:', error.message);
+      return null;
+    }
+
+    return data || null;
+  } catch (err) {
+    console.warn('Supabase secure order exception:', err);
+    return null;
+  }
+}
+
+/**
  * Save new order to Supabase 'orders' table
  */
 export async function saveOrderToSupabase(order) {

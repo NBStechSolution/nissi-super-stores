@@ -67,7 +67,7 @@ export default function CheckoutView() {
     return '';
   };
 
-  const handleSubmitOrder = (e) => {
+  const handleSubmitOrder = async (e) => {
     e.preventDefault();
     setFormError('');
 
@@ -105,14 +105,28 @@ export default function CheckoutView() {
         ? 'Card on Delivery (POS Swipe)'
         : 'Cash on Delivery (COD)';
 
-    setTimeout(() => {
-      createOrder({
+    try {
+      const result = await createOrder({
         ...formData,
         deliveryType,
         paymentMethod: selectedMethodLabel,
         paymentStatus: 'Unpaid (Collect at Doorstep)'
       });
-    }, 500);
+
+      if (!result?.success) {
+        setFormError(
+          result?.message ||
+          'Unable to place your order right now. Please try again.'
+        );
+      }
+    } catch (error) {
+      console.error('Order placement error:', error);
+      setFormError(
+        'Unable to place your order right now. Please try again.'
+      );
+    } finally {
+      setIsSubmittingOrder(false);
+    }
   };
 
   return (
